@@ -11,7 +11,7 @@ function writeIndex() {
   const index = buildIndex(CONTENT_DIR);
   fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(index, null, 2));
-  console.log(`[pora] indexed ${index.total} files → ${OUTPUT_FILE}`);
+  console.log(`[nexporta] indexed ${index.total} files → ${OUTPUT_FILE}`);
 }
 
 writeIndex();
@@ -20,9 +20,9 @@ let debounceTimer;
 chokidar
   .watch(CONTENT_DIR, { ignoreInitial: true, persistent: true })
   .on('all', (event, filePath) => {
-    console.log(`[pora] ${event}: ${filePath}`);
+    console.log(`[nexporta] ${event}: ${filePath}`);
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(writeIndex, DEBOUNCE_MS);
   });
 
-console.log(`[pora] watching ${CONTENT_DIR}`);
+console.log(`[nexporta] watching ${CONTENT_DIR}`);

@@ -6,7 +6,7 @@ const os = require('node:os');
 const { buildIndex } = require('../builder');
 
 function makeContentDir() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pora-build-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-build-'));
   fs.mkdirSync(path.join(dir, 'sales'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'sales', 'q1.html'),
     '<html><head><title>Q1 Sales</title></head></html>');
@@ -59,7 +59,7 @@ test('total equals items.length', () => {
 });
 
 test('returns zero total for empty directory', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pora-build-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-build-'));
   const index = buildIndex(dir);
   assert.equal(index.total, 0);
   assert.deepEqual(index.items, []);

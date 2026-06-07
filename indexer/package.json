@@ -1,7 +1,7 @@
 {
-  "name": "pora-indexer",
+  "name": "nexporta-indexer",
   "version": "1.0.0",
-  "description": "Pora content indexer",
+  "description": "NexPorta content indexer",
   "main": "index.js",
   "engines": {
     "node": ">=22.0.0"

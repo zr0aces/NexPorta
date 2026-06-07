@@ -140,14 +140,14 @@ function update() {
 // Theme
 
 function initTheme() {
-  const saved = localStorage.getItem('pora-theme') || 'light';
+  const saved = localStorage.getItem('nexporta-theme') || 'light';
   document.documentElement.dataset.theme = saved;
 }
 
 function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
-  localStorage.setItem('pora-theme', next);
+  localStorage.setItem('nexporta-theme', next);
 }
 
 // Boot

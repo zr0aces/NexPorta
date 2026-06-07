@@ -6,7 +6,7 @@ services:
       OUTPUT_FILE: /data/index.json
       DEBOUNCE_MS: "1000"
     volumes:
-      - ./homepage:/content:ro
+      - ./content:/content:ro
       - index_data:/data
     restart: unless-stopped
 
@@ -17,7 +17,7 @@ services:
     volumes:
       - ./dashboard:/usr/share/nginx/html:ro
       - index_data:/data:ro
-      - ./homepage:/content:rslave,ro
+      - ./content:/content:rslave,ro
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - indexer

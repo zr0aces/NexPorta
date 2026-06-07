@@ -6,7 +6,7 @@ const os = require('node:os');
 const { extractTitle } = require('../extractor');
 
 function writeTempFile(name, content) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pora-test-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-test-'));
   const file = path.join(dir, name);
   fs.writeFileSync(file, content);
   return file;

@@ -6,7 +6,7 @@ const os = require('node:os');
 const { scanDirectory } = require('../scanner');
 
 function makeTree(structure) {
-  const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pora-scan-'));
+  const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-scan-'));
   for (const [relPath, content] of Object.entries(structure)) {
     const fullPath = path.join(baseDir, relPath);
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });
@@ -51,7 +51,7 @@ test('excludes non-HTML files', () => {
 });
 
 test('returns empty array for empty directory', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pora-scan-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-scan-'));
   assert.deepEqual(scanDirectory(dir), []);
 });
 
