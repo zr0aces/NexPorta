@@ -154,7 +154,32 @@ function toggleTheme() {
 
 let searchTimer;
 
-async function boot() {
+async function loadIndex() {
+  const status = document.getElementById('status');
+  status.hidden = false;
+  status.innerHTML = '<span class="status-spinner"></span>Loading';
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch('/index.json', { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allItems = data.items || [];
+    status.hidden = true;
+    update();
+  } catch (err) {
+    clearTimeout(timeout);
+    const msg = err.name === 'AbortError' ? 'Request timed out' : err.message;
+    status.innerHTML =
+      `<span class="status-err">Could not load index.json — ${escapeHtml(msg)}</span>` +
+      `<button class="status-retry" onclick="loadIndex()">Retry</button>`;
+  }
+}
+
+function boot() {
   initTheme();
   document.getElementById('search').addEventListener('input', () => {
     clearTimeout(searchTimer);
@@ -162,18 +187,7 @@ async function boot() {
   });
   document.getElementById('sort').addEventListener('change', update);
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-
-  const status = document.getElementById('status');
-  try {
-    const res = await fetch('/index.json');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    allItems = data.items || [];
-    status.hidden = true;
-    update();
-  } catch (err) {
-    status.textContent = `Failed to load index: ${err.message}`;
-  }
+  loadIndex();
 }
 
 boot();

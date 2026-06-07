@@ -212,6 +212,29 @@ html {
   font-size: 0.875rem;
 }
 
+.status-err {
+  color: var(--text);
+  font-size: 0.875rem;
+}
+
+.status-retry {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  color: var(--orange);
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.status-retry:hover {
+  background: var(--orange-bg);
+  border-color: var(--orange);
+}
+
 .status-spinner {
   width: 16px;
   height: 16px;
