@@ -2,12 +2,17 @@
 
 function filterItems(items, query) {
   if (!query) return items;
-  const q = query.toLowerCase();
-  return items.filter(item =>
-    item.title.toLowerCase().includes(q) ||
-    item.filename.toLowerCase().includes(q) ||
-    item.folder.toLowerCase().includes(q)
-  );
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return items.filter(item => {
+    const title = item.title.toLowerCase();
+    const filename = item.filename.toLowerCase();
+    const folder = item.folder.toLowerCase();
+    return terms.every(term =>
+      title.includes(term) ||
+      filename.includes(term) ||
+      folder.includes(term)
+    );
+  });
 }
 
 function sortItems(items, sortBy) {
@@ -70,17 +75,42 @@ function renderCard(item) {
   a.target = '_blank';
   a.rel = 'noopener noreferrer';
   a.referrerPolicy = 'no-referrer';
-  a.innerHTML =
-    `<div class="card-file-icon">${ICON_FILE}</div>` +
-    `<div class="card-body">` +
-      `<div class="card-title">${escapeHtml(item.title)}</div>` +
-      `<div class="card-meta">` +
-        `<span class="card-filename">${escapeHtml(item.filename)}</span>` +
-        `<span class="card-sep">·</span>` +
-        `<span>${formatDate(item.modified)}</span>` +
-      `</div>` +
-    `</div>` +
-    `<div class="card-link-icon">${ICON_ARROW}</div>`;
+
+  const fileIcon = document.createElement('div');
+  fileIcon.className = 'card-file-icon';
+  const fileIconSvg = new DOMParser().parseFromString(ICON_FILE, 'image/svg+xml').documentElement;
+  fileIcon.appendChild(fileIconSvg);
+
+  const body = document.createElement('div');
+  body.className = 'card-body';
+
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  title.textContent = item.title;
+
+  const meta = document.createElement('div');
+  meta.className = 'card-meta';
+
+  const filename = document.createElement('span');
+  filename.className = 'card-filename';
+  filename.textContent = item.filename;
+
+  const sep = document.createElement('span');
+  sep.className = 'card-sep';
+  sep.textContent = ' · ';
+
+  const modified = document.createElement('span');
+  modified.textContent = formatDate(item.modified);
+
+  meta.append(filename, sep, modified);
+  body.append(title, meta);
+
+  const linkIcon = document.createElement('div');
+  linkIcon.className = 'card-link-icon';
+  const linkIconSvg = new DOMParser().parseFromString(ICON_ARROW, 'image/svg+xml').documentElement;
+  linkIcon.appendChild(linkIconSvg);
+
+  a.append(fileIcon, body, linkIcon);
   return a;
 }
 
@@ -88,7 +118,7 @@ function renderGroups(items, sortBy) {
   const sorted = sortItems(items, sortBy);
   const groups = groupByFolder(sorted);
   const container = document.getElementById('groups');
-  container.innerHTML = '';
+  container.replaceChildren();
 
   const folders = Object.keys(groups).sort();
   folders.forEach((folder, i) => {
@@ -99,11 +129,24 @@ function renderGroups(items, sortBy) {
     const count = groups[folder].length;
     const header = document.createElement('div');
     header.className = 'folder-header';
-    header.innerHTML =
-      `<span class="folder-icon">${ICON_FOLDER}</span>` +
-      `<span class="folder-name">${escapeHtml(folder || 'Root')}</span>` +
-      `<span class="folder-count">${count} ${count === 1 ? 'file' : 'files'}</span>` +
-      `<span class="folder-rule"></span>`;
+
+    const folderIcon = document.createElement('span');
+    folderIcon.className = 'folder-icon';
+    const folderIconSvg = new DOMParser().parseFromString(ICON_FOLDER, 'image/svg+xml').documentElement;
+    folderIcon.appendChild(folderIconSvg);
+
+    const folderName = document.createElement('span');
+    folderName.className = 'folder-name';
+    folderName.textContent = folder || 'Root';
+
+    const folderCount = document.createElement('span');
+    folderCount.className = 'folder-count';
+    folderCount.textContent = `${count} ${count === 1 ? 'file' : 'files'}`;
+
+    const folderRule = document.createElement('span');
+    folderRule.className = 'folder-rule';
+
+    header.append(folderIcon, folderName, folderCount, folderRule);
     groupEl.appendChild(header);
 
     const grid = document.createElement('div');
@@ -157,7 +200,11 @@ let searchTimer;
 async function loadIndex() {
   const status = document.getElementById('status');
   status.hidden = false;
-  status.innerHTML = '<span class="status-spinner"></span>Loading';
+  status.replaceChildren();
+
+  const spinner = document.createElement('span');
+  spinner.className = 'status-spinner';
+  status.append(spinner, document.createTextNode('Loading'));
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -173,19 +220,41 @@ async function loadIndex() {
   } catch (err) {
     clearTimeout(timeout);
     const msg = err.name === 'AbortError' ? 'Request timed out' : err.message;
-    status.innerHTML =
-      `<span class="status-err">Could not load index.json — ${escapeHtml(msg)}</span>` +
-      `<button class="status-retry">Retry</button>`;
-    status.querySelector('.status-retry').addEventListener('click', loadIndex);
+    
+    status.replaceChildren();
+    
+    const errSpan = document.createElement('span');
+    errSpan.className = 'status-err';
+    errSpan.textContent = `Could not load index.json — ${msg}`;
+    
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'status-retry';
+    retryBtn.textContent = 'Retry';
+    retryBtn.addEventListener('click', loadIndex);
+    
+    status.append(errSpan, retryBtn);
   }
 }
 
 function boot() {
   initTheme();
-  document.getElementById('search').addEventListener('input', () => {
+  const searchInput = document.getElementById('search');
+  searchInput.addEventListener('input', () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(update, 200);
   });
+
+  // Keyboard shortcut: Press '/' to focus search
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement !== searchInput) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    } else if (e.key === 'Escape' && document.activeElement === searchInput) {
+      searchInput.blur();
+    }
+  });
+
   document.getElementById('sort').addEventListener('change', update);
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
   loadIndex();

@@ -1,6 +1,8 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
+const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.claude']);
+
 function scanDirectory(rootDir) {
   const results = [];
   if (!fs.existsSync(rootDir)) return results;
@@ -13,11 +15,11 @@ function scanDirectory(rootDir) {
       return;
     }
     for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        walk(fullPath);
+        if (EXCLUDE_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
+        walk(path.join(dir, entry.name));
       } else if (/\.(html|htm)$/i.test(entry.name)) {
-        results.push(fullPath);
+        results.push(path.join(dir, entry.name));
       }
     }
   }

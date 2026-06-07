@@ -23,7 +23,11 @@ writeIndex();
 
 let debounceTimer;
 chokidar
-  .watch(CONTENT_DIR, { ignoreInitial: true, persistent: true })
+  .watch(CONTENT_DIR, { 
+    ignoreInitial: true, 
+    persistent: true,
+    ignored: [/(^|[\/\\])\../, '**/node_modules/**', '**/dist/**', '**/build/**']
+  })
   .on('all', (event, filePath) => {
     console.log(`[nexporta] ${event}: ${filePath}`);
     clearTimeout(debounceTimer);
