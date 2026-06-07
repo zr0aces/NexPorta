@@ -24,37 +24,50 @@ Browser → Nginx → Dashboard UI + index.json + /content/* files
 ## Quick Start
 
 ```bash
-# 1. Clone
-git clone <repo-url> nexporta && cd nexporta
-
-# 2. Copy example compose (points to ./content by default)
+# 1. Copy the example files
 cp docker-compose.example.yml docker-compose.yml
+cp .env.example .env
 
-# 3. Add your HTML files
-mkdir -p content/reports
-cp your-report.html content/reports/
+# 2. Edit docker-compose.yml — replace /path/to/your/content with your HTML files directory
+#    (search for the two volume lines that start with /path/to/your/content)
 
-# 4. Start
+# 3. Start
 docker compose up -d
 
 # Dashboard → http://localhost:8199
 ```
 
-> **First run** takes a moment for the indexer to build. Refresh if the dashboard shows empty.
+> **First run** pulls the images from GHCR and waits for the indexer to finish building. Refresh if the dashboard shows empty.
+
+> **To build locally** instead of pulling from GHCR, see the commented `build:` lines in `docker-compose.example.yml`.
+
+---
+
+## Docker Images
+
+Pre-built multi-arch images (`linux/amd64`, `linux/arm64`) are published to GHCR on every release:
+
+| Image | Tags |
+|-------|------|
+| `ghcr.io/zr0aces/nexporta-indexer` | `latest`, `1.2.3`, `1.2` |
+| `ghcr.io/zr0aces/nexporta-web` | `latest`, `1.2.3`, `1.2` |
+
+Images are published automatically by the [Docker Publish](.github/workflows/docker-publish.yml) GitHub Actions workflow when a GitHub Release is created. Pre-releases do **not** receive the `latest` tag.
 
 ---
 
 ## Configuration
 
-All configuration is via environment variables in `docker-compose.yml`:
+All configuration is via environment variables. Set them in `.env` (copied from `.env.example`) or directly in `docker-compose.yml`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `PORT` | `8199` | Host port the dashboard is exposed on |
 | `CONTENT_DIR` | `/content` | Directory to scan inside the container |
 | `OUTPUT_FILE` | `/data/index.json` | Where the index is written |
 | `DEBOUNCE_MS` | `1000` | Delay (ms) before re-indexing after a file change |
 
-**Port**: default `8199:80`. Change the left side in `docker-compose.yml`:
+**Port**: set `PORT` in `.env` or override in `docker-compose.yml`:
 
 ```yaml
 ports:
@@ -65,8 +78,8 @@ ports:
 
 ```yaml
 volumes:
-  - /path/to/your/content:/content:ro   # indexer
-  - /path/to/your/content:/content:rslave,ro   # web
+  - /path/to/your/content:/content:ro        # indexer
+  - /path/to/your/content:/content:rslave,ro # web
 ```
 
 ---
@@ -113,15 +126,20 @@ docker compose down -v && docker compose up -d
 nexporta/
 ├── content/              # Your HTML files go here
 ├── dashboard/            # Frontend (index.html, style.css, app.js)
+│   └── Dockerfile        # Production web image (nginx + baked assets)
 ├── indexer/              # Node.js watcher + indexer
 │   ├── index.js          # Entry point, chokidar watcher
 │   ├── scanner.js        # Recursive file discovery
 │   ├── extractor.js      # Title extraction
 │   ├── builder.js        # Assembles index.json
+│   ├── Dockerfile        # Production indexer image
 │   └── tests/            # node:test test suite (20 tests)
-├── nginx/nginx.conf      # Routing config
+├── nginx/nginx.conf      # Routing config (baked into web image)
+├── .github/workflows/
+│   └── docker-publish.yml  # Builds & publishes images on Release
+├── .env.example          # Environment variable template
 ├── docker-compose.yml    # Active deployment config
-└── docker-compose.example.yml  # Template to copy from
+└── docker-compose.example.yml  # Production template (copy from here)
 ```
 
 ---
@@ -133,6 +151,7 @@ nexporta/
 | [docs/specs.md](docs/specs.md) | Full product specification, architecture, roadmap |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design system — colors, typography, components |
 | [CLAUDE.md](CLAUDE.md) | Developer guide for Claude Code (commands, architecture notes) |
+| [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml) | CI/CD — multi-arch GHCR publish on Release |
 
 ---
 
