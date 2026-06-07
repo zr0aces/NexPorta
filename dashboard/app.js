@@ -40,9 +40,9 @@ function escapeHtml(str) {
 }
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-  });
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 // Icons
@@ -167,7 +167,7 @@ async function loadIndex() {
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    allItems = data.items || [];
+    allItems = Array.isArray(data.items) ? data.items : [];
     status.hidden = true;
     update();
   } catch (err) {
@@ -175,7 +175,8 @@ async function loadIndex() {
     const msg = err.name === 'AbortError' ? 'Request timed out' : err.message;
     status.innerHTML =
       `<span class="status-err">Could not load index.json — ${escapeHtml(msg)}</span>` +
-      `<button class="status-retry" onclick="loadIndex()">Retry</button>`;
+      `<button class="status-retry">Retry</button>`;
+    status.querySelector('.status-retry').addEventListener('click', loadIndex);
   }
 }
 
