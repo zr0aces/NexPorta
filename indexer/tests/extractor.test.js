@@ -37,3 +37,8 @@ test('prefers <title> over <h1> when both present', () => {
     '<html><head><title>Title Tag</title></head><body><h1>H1 Tag</h1></body></html>');
   assert.equal(extractTitle(file), 'Title Tag');
 });
+
+test('falls back to h1 when title is whitespace-only', () => {
+  const file = writeTempFile('test.html', '<html><head><title>   </title></head><body><h1>Real Heading</h1></body></html>');
+  assert.equal(extractTitle(file), 'Real Heading');
+});
