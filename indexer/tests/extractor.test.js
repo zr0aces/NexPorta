@@ -42,3 +42,9 @@ test('falls back to h1 when title is whitespace-only', () => {
   const file = writeTempFile('test.html', '<html><head><title>   </title></head><body><h1>Real Heading</h1></body></html>');
   assert.equal(extractTitle(file), 'Real Heading');
 });
+
+test('strips nested HTML tags from h1', () => {
+  const file = writeTempFile('test.html',
+    '<html><body><h1><a href="page.html">Linked Title</a></h1></body></html>');
+  assert.equal(extractTitle(file), 'Linked Title');
+});

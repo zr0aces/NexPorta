@@ -11,10 +11,16 @@ function extractTitle(filepath) {
   }
 
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  if (titleMatch && titleMatch[1].trim()) return titleMatch[1].trim();
+  if (titleMatch) {
+    const t = titleMatch[1].replace(/<[^>]+>/g, '').trim();
+    if (t) return t;
+  }
 
   const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
-  if (h1Match && h1Match[1].trim()) return h1Match[1].trim();
+  if (h1Match) {
+    const t = h1Match[1].replace(/<[^>]+>/g, '').trim();
+    if (t) return t;
+  }
 
   const stem = path.basename(filepath, path.extname(filepath));
   return stem.replace(/[-_]+/g, ' ').trim();
