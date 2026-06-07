@@ -1,7 +1,7 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const chokidar = require('chokidar');
-const { buildIndex } = require('./builder');
+import fs from 'node:fs';
+import path from 'node:path';
+import chokidar from 'chokidar';
+import { buildIndex } from './builder.js';
 
 const CONTENT_DIR = process.env.CONTENT_DIR || '/content';
 const OUTPUT_FILE = process.env.OUTPUT_FILE || '/data/index.json';

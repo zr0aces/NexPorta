@@ -1,9 +1,9 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.claude']);
 
-function scanDirectory(rootDir) {
+export function scanDirectory(rootDir) {
   const results = [];
   if (!fs.existsSync(rootDir)) return results;
 
@@ -27,5 +27,3 @@ function scanDirectory(rootDir) {
   walk(rootDir);
   return results;
 }
-
-module.exports = { scanDirectory };

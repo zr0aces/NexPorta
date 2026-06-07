@@ -1,9 +1,9 @@
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const fs = require('node:fs');
-const os = require('node:os');
-const { buildIndex } = require('../builder');
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
+import { buildIndex } from '../builder.js';
 
 function makeContentDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-build-'));

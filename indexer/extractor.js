@@ -1,7 +1,7 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
-function extractTitle(filepath) {
+export function extractTitle(filepath) {
   let html;
   try {
     html = fs.readFileSync(filepath, 'utf8');
@@ -25,5 +25,3 @@ function extractTitle(filepath) {
   const stem = path.basename(filepath, path.extname(filepath));
   return stem.replace(/[-_]+/g, ' ').trim();
 }
-
-module.exports = { extractTitle };

@@ -1,9 +1,9 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { scanDirectory } = require('./scanner');
-const { extractTitle } = require('./extractor');
+import fs from 'node:fs';
+import path from 'node:path';
+import { scanDirectory } from './scanner.js';
+import { extractTitle } from './extractor.js';
 
-function buildIndex(contentDir) {
+export function buildIndex(contentDir) {
   const files = scanDirectory(contentDir);
   const items = files.flatMap(filepath => {
     let stat;
@@ -29,5 +29,3 @@ function buildIndex(contentDir) {
     items,
   };
 }
-
-module.exports = { buildIndex };
