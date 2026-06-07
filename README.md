@@ -133,3 +133,9 @@ nexporta/
 | [docs/specs.md](docs/specs.md) | Full product specification, architecture, roadmap |
 | [docs/DESIGN.md](docs/DESIGN.md) | Design system — colors, typography, components |
 | [CLAUDE.md](CLAUDE.md) | Developer guide for Claude Code (commands, architecture notes) |
+
+---
+
+## License
+
+[MIT](LICENSE)
