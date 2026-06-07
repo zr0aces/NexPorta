@@ -125,4 +125,4 @@ console.log('Suggested next steps:');
 console.log('  git add -A');
 console.log(`  git commit -m "release: v${version}"`);
 console.log(`  git tag -a "v${version}" -m "Release v${version}"`);
-console.log('  git push origin <branch> --follow-tags');
+console.log('  git push origin main --tags');
