@@ -86,11 +86,11 @@ html {
   margin-right: 6px;
 }
 
-.wordmark-pip {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--orange);
+.wordmark-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 
