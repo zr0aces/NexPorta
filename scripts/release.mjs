@@ -11,13 +11,35 @@ const SYNC_SCRIPT = path.join(repoRoot, 'scripts', 'sync-version.mjs');
 
 const CALVER_REGEX = /^(\d{4})\.(\d{1,2})\.(\d+)$/;
 
+function printHelp() {
+  console.log(`Usage:
+  node scripts/release.mjs
+  node scripts/release.mjs --version <YYYY.M.N>
+  node scripts/release.mjs <YYYY.M.N>
+  node scripts/release.mjs --help
+
+Description:
+  - Without arguments: bumps to the next monthly CalVer and syncs versioned files.
+  - With --version or positional version: sets VERSION manually, then syncs files.
+
+Examples:
+  node scripts/release.mjs
+  node scripts/release.mjs --version 2026.6.3
+  node scripts/release.mjs 2026.6.3`);
+}
+
 function parseCalVer(version) {
   const match = version.match(CALVER_REGEX);
   if (!match) return null;
+
+  const month = Number(match[2]);
+  const increment = Number(match[3]);
+  if (month < 1 || month > 12 || increment < 1) return null;
+
   return {
     year: Number(match[1]),
-    month: Number(match[2]),
-    increment: Number(match[3])
+    month,
+    increment
   };
 }
 
@@ -59,7 +81,48 @@ function runSync() {
   }
 }
 
-const version = nextCalVer();
+function resolveTargetVersion(argv) {
+  if (argv.length === 0) {
+    return nextCalVer();
+  }
+
+  if (argv.length === 1 && (argv[0] === '--help' || argv[0] === '-h')) {
+    printHelp();
+    process.exit(0);
+  }
+
+  if (argv.length === 1) {
+    const positionalVersion = argv[0];
+    if (!parseCalVer(positionalVersion)) {
+      console.error(
+        `Invalid version "${positionalVersion}". Expected YYYY.M.N with month 1-12 and N >= 1.`
+      );
+      process.exit(1);
+    }
+    return positionalVersion;
+  }
+
+  if (argv.length === 2 && (argv[0] === '--version' || argv[0] === '-v')) {
+    const explicitVersion = argv[1];
+    if (!parseCalVer(explicitVersion)) {
+      console.error(
+        `Invalid version "${explicitVersion}". Expected YYYY.M.N with month 1-12 and N >= 1.`
+      );
+      process.exit(1);
+    }
+    return explicitVersion;
+  }
+
+  console.error('Invalid arguments. Use --help for usage.');
+  process.exit(1);
+}
+
+const version = resolveTargetVersion(process.argv.slice(2));
 writeVersion(version);
 runSync();
 console.log(`Released ${version}`);
+console.log('Suggested next steps:');
+console.log('  git add -A');
+console.log(`  git commit -m "release: v${version}"`);
+console.log(`  git tag -a "v${version}" -m "Release v${version}"`);
+console.log('  git push origin <branch> --follow-tags');
