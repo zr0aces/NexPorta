@@ -36,14 +36,6 @@ function groupByFolder(items) {
   return groups;
 }
 
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function formatDate(iso) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '—';

@@ -104,8 +104,8 @@ Browser
 
 ### Indexer
 
-* Node.js 22 LTS
-* chokidar
+* Node.js 22 LTS (ES Modules)
+* chokidar (v5.0.0+)
 
 ## Frontend
 
