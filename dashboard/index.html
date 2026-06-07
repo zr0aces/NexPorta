@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pora</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1 class="site-title">Pora</h1>
+      <div class="controls">
+        <input
+          type="search"
+          id="search"
+          class="search-input"
+          placeholder="Search..."
+          aria-label="Search content"
+        >
+        <select id="sort" class="sort-select" aria-label="Sort by">
+          <option value="title">Sort: Title</option>
+          <option value="folder">Sort: Folder</option>
+          <option value="modified">Sort: Modified</option>
+        </select>
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle dark mode" title="Toggle theme">
+          <span class="icon-light">☀️</span>
+          <span class="icon-dark">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <div id="status" class="status" aria-live="polite">Loading...</div>
+    <div id="groups" class="groups" hidden></div>
+    <div id="empty" class="empty-state" hidden>No content found.</div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
