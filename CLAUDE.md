@@ -27,6 +27,12 @@ docker compose logs web
 
 # Stop and remove volumes (needed after Dockerfile permission changes)
 docker compose down -v
+
+# Sync version from VERSION file
+node scripts/sync-version.mjs
+
+# Bump CalVer release version and sync everywhere
+node scripts/release.mjs
 ```
 
 ## Architecture

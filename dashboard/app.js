@@ -189,6 +189,13 @@ function toggleTheme() {
 
 let searchTimer;
 
+function initVersionLabel() {
+  const el = document.getElementById('app-version');
+  if (!el) return;
+  const version = typeof window.NEXPORTA_VERSION === 'string' ? window.NEXPORTA_VERSION : '';
+  el.textContent = version ? `v${version}` : '';
+}
+
 async function loadIndex() {
   const status = document.getElementById('status');
   status.hidden = false;
@@ -229,6 +236,7 @@ async function loadIndex() {
 }
 
 function boot() {
+  initVersionLabel();
   initTheme();
   const searchInput = document.getElementById('search');
   searchInput.addEventListener('input', () => {

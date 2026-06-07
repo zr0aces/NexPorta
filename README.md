@@ -94,6 +94,16 @@ volumes:
 
 ---
 
+## Versioning
+
+NexPorta uses **CalVer** in the format `YYYY.M.N` (example: `2026.6.1`).
+
+- `VERSION` is the single source of truth.
+- `node scripts/sync-version.mjs` syncs that version to related files (`indexer/package*.json`, `dashboard/version.js`).
+- `node scripts/release.mjs` bumps to the next monthly release version and runs sync automatically.
+
+---
+
 ## Development
 
 ```bash
@@ -116,6 +126,12 @@ docker compose logs web
 
 # Full reset (volume permissions changed, etc.)
 docker compose down -v && docker compose up -d
+
+# Sync version from VERSION file
+node scripts/sync-version.mjs
+
+# Bump CalVer release version and sync
+node scripts/release.mjs
 ```
 
 ---
@@ -137,6 +153,10 @@ nexporta/
 ├── nginx/nginx.conf      # Routing config (baked into web image)
 ├── .github/workflows/
 │   └── docker-publish.yml  # Builds & publishes images on Release
+├── scripts/
+│   ├── release.mjs       # CalVer bump + sync helper
+│   └── sync-version.mjs  # Syncs VERSION across project files
+├── VERSION               # Single source of truth for app version
 ├── .env.example          # Environment variable template
 ├── docker-compose.yml    # Active deployment config
 └── docker-compose.example.yml  # Production template (copy from here)

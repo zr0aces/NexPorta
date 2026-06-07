@@ -94,6 +94,14 @@ html {
   flex-shrink: 0;
 }
 
+.wordmark-version {
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-2);
+}
+
 /* Search */
 
 .search-wrap {
