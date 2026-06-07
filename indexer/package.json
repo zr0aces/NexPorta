@@ -1,0 +1,13 @@
+{
+  "name": "pora-indexer",
+  "version": "1.0.0",
+  "description": "Pora content indexer",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  }
+}
