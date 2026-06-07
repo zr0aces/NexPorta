@@ -422,9 +422,35 @@ html {
   .wordmark { font-size: 1.1rem; }
   .search-wrap { max-width: unset; }
   .sort-wrap svg { display: none; }
-  .card-grid { grid-template-columns: 1fr 1fr; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 520px) {
+  .header-inner {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .wordmark {
+    order: 1;
+  }
+  .header-actions {
+    order: 2;
+    margin-left: auto;
+  }
+  .search-wrap {
+    order: 3;
+    flex-basis: 100%;
+    max-width: 100%;
+    margin-top: 2px;
+  }
+}
+
+@media (max-width: 480px) {
   .card-grid { grid-template-columns: 1fr; }
+  .site-main { padding: 24px 16px 40px 16px; }
+  .card { padding: 14px 16px; gap: 12px; }
+  .card-filename { max-width: 120px; }
+  .groups { gap: 32px; }
 }
