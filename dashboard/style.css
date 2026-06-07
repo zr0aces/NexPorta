@@ -6,6 +6,10 @@
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --orange:      #F97316;
   --orange-glow: rgba(249, 115, 22, 0.12);
@@ -122,6 +126,7 @@ html {
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .search-input::placeholder { color: var(--text-3); }
@@ -164,6 +169,7 @@ html {
   outline: none;
   cursor: pointer;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .sort-select option {
