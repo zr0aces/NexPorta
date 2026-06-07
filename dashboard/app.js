@@ -45,6 +45,22 @@ function formatDate(iso) {
   });
 }
 
+// Icons
+
+const ICON_FILE = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+  <path d="M3 1h5.5L11 4v9H3V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M8.5 1v3.5H11" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+</svg>`;
+
+const ICON_FOLDER = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+  <path d="M1 4h12v8H1V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M1 4V3h4l1 1H1" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+</svg>`;
+
+const ICON_ARROW = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+  <path d="M2 9L9 2M5 2h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
 // DOM rendering
 
 function renderCard(item) {
@@ -52,11 +68,19 @@ function renderCard(item) {
   a.className = 'card';
   a.href = item.path;
   a.target = '_blank';
-  a.rel = 'noopener';
+  a.rel = 'noopener noreferrer';
+  a.referrerPolicy = 'no-referrer';
   a.innerHTML =
-    `<div class="card-title">${escapeHtml(item.title)}</div>` +
-    `<div class="card-filename">${escapeHtml(item.filename)}</div>` +
-    `<div class="card-modified">${formatDate(item.modified)}</div>`;
+    `<div class="card-file-icon">${ICON_FILE}</div>` +
+    `<div class="card-body">` +
+      `<div class="card-title">${escapeHtml(item.title)}</div>` +
+      `<div class="card-meta">` +
+        `<span class="card-filename">${escapeHtml(item.filename)}</span>` +
+        `<span class="card-sep">·</span>` +
+        `<span>${formatDate(item.modified)}</span>` +
+      `</div>` +
+    `</div>` +
+    `<div class="card-link-icon">${ICON_ARROW}</div>`;
   return a;
 }
 
@@ -66,13 +90,21 @@ function renderGroups(items, sortBy) {
   const container = document.getElementById('groups');
   container.innerHTML = '';
 
-  for (const folder of Object.keys(groups).sort()) {
+  const folders = Object.keys(groups).sort();
+  folders.forEach((folder, i) => {
     const groupEl = document.createElement('div');
+    groupEl.className = 'folder-group';
+    groupEl.style.animationDelay = `${i * 60}ms`;
 
-    const label = document.createElement('div');
-    label.className = 'folder-label';
-    label.textContent = folder || 'Root';
-    groupEl.appendChild(label);
+    const count = groups[folder].length;
+    const header = document.createElement('div');
+    header.className = 'folder-header';
+    header.innerHTML =
+      `<span class="folder-icon">${ICON_FOLDER}</span>` +
+      `<span class="folder-name">${escapeHtml(folder || 'Root')}</span>` +
+      `<span class="folder-count">${count} ${count === 1 ? 'file' : 'files'}</span>` +
+      `<span class="folder-rule"></span>`;
+    groupEl.appendChild(header);
 
     const grid = document.createElement('div');
     grid.className = 'card-grid';
@@ -81,7 +113,7 @@ function renderGroups(items, sortBy) {
     }
     groupEl.appendChild(grid);
     container.appendChild(groupEl);
-  }
+  });
 }
 
 // App state
