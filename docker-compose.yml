@@ -1,6 +1,7 @@
 services:
   indexer:
     build: ./indexer
+    container_name: nexporta-indexer
     environment:
       CONTENT_DIR: /content
       OUTPUT_FILE: /data/index.json
@@ -12,8 +13,9 @@ services:
 
   web:
     image: nginx:alpine
+    container_name: nexporta-web
     ports:
-      - "8199:80"
+      - "80:80"
     volumes:
       - ./dashboard:/usr/share/nginx/html:ro
       - index_data:/data:ro
