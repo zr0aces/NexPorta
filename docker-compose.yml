@@ -15,7 +15,7 @@ services:
     image: nginx:alpine
     container_name: nexporta-web
     ports:
-      - "80:80"
+      - "${HOST_PORT:-8199}:80"
     volumes:
       - ./dashboard:/usr/share/nginx/html:ro
       - index_data:/data:ro
