@@ -64,3 +64,38 @@ test('returns zero total for empty directory', () => {
   assert.equal(index.total, 0);
   assert.deepEqual(index.items, []);
 });
+
+test('excludes files resolving outside the content directory', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-build-'));
+  
+  // Create an external file
+  const externalDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-external-'));
+  const externalFile = path.join(externalDir, 'external.html');
+  fs.writeFileSync(externalFile, '<html><head><title>External</title></head></html>');
+  
+  // Mock fs.readdirSync to return a simulated traversal path that scanDirectory will return
+  const originalReaddirSync = fs.readdirSync;
+  t.mock.method(fs, 'readdirSync', (p, options) => {
+    if (p === dir) {
+      const relToExternal = path.relative(dir, externalFile);
+      // We wrap the traversal inside a dummy subdirectory name so it doesn't start with '.'
+      const entryName = 'dummy/' + relToExternal;
+      return [{
+        name: entryName,
+        isDirectory: () => false,
+        isFile: () => true,
+        isSymbolicLink: () => false,
+      }];
+    }
+    return originalReaddirSync(p, options);
+  });
+
+  const index = buildIndex(dir);
+  assert.equal(index.total, 0);
+  assert.deepEqual(index.items, []);
+
+  // Clean up
+  try {
+    fs.rmSync(externalDir, { recursive: true });
+  } catch {}
+});

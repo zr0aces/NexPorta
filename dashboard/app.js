@@ -156,15 +156,31 @@ function renderGroups(items, sortBy) {
 let allItems = [];
 
 function update() {
-  const query = document.getElementById('search').value;
+  const searchInput = document.getElementById('search');
+  const query = searchInput.value;
   const sortBy = document.getElementById('sort').value;
   const filtered = filterItems(allItems, query);
   const groups = document.getElementById('groups');
   const empty = document.getElementById('empty');
 
+  const searchClear = document.getElementById('search-clear');
+  if (searchClear) {
+    searchClear.hidden = !query;
+  }
+
   if (filtered.length === 0) {
     groups.hidden = true;
     empty.hidden = false;
+    
+    const emptyTitle = document.getElementById('empty-title');
+    const emptySub = document.getElementById('empty-subtitle');
+    if (allItems.length === 0) {
+      emptyTitle.textContent = 'No files indexed yet';
+      emptySub.textContent = 'Add HTML files to your content directory and the indexer will automatically discover them.';
+    } else {
+      emptyTitle.textContent = 'No matching files';
+      emptySub.textContent = `No files found for "${query}". Try checking your spelling or using a different query.`;
+    }
   } else {
     groups.hidden = false;
     empty.hidden = true;
@@ -243,6 +259,15 @@ function boot() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(update, 200);
   });
+
+  const searchClear = document.getElementById('search-clear');
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchInput.focus();
+      update();
+    });
+  }
 
   // Keyboard shortcut: Press '/' to focus search
   document.addEventListener('keydown', (e) => {

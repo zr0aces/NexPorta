@@ -5,6 +5,7 @@ import { extractTitle } from './extractor.js';
 
 export function buildIndex(contentDir) {
   const files = scanDirectory(contentDir);
+  const resolvedContentDir = path.resolve(contentDir);
   const items = files.flatMap(filepath => {
     let stat;
     try {
@@ -12,7 +13,12 @@ export function buildIndex(contentDir) {
     } catch {
       return [];
     }
-    const rel = path.relative(contentDir, filepath);
+    const resolvedFilepath = path.resolve(filepath);
+    const rel = path.relative(resolvedContentDir, resolvedFilepath);
+    // Ensure filepath is strictly inside contentDir to prevent directory traversal
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      return [];
+    }
     const folder = path.dirname(rel);
     return [{
       path: '/content/' + rel.split(/[\\/]/).map(encodeURIComponent).join('/'),

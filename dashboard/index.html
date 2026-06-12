@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NexPorta</title>
+  <meta name="description" content="NexPorta - A clean, lightweight, and secure personal dashboard for indexing and browsing local HTML files and documents.">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -32,6 +33,12 @@
           <line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
         <input type="search" id="search" class="search-input" placeholder="Search files…" aria-label="Search content" autocomplete="off" spellcheck="false">
+        <button id="search-clear" class="search-clear-btn" aria-label="Clear search" title="Clear search" hidden>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <line x1="2.5" y1="2.5" x2="9.5" y2="9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="9.5" y1="2.5" x2="2.5" y2="9.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
 
       <div class="header-actions">
@@ -81,7 +88,8 @@
         <line x1="14" y1="20" x2="26" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         <line x1="20" y1="14" x2="20" y2="26" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      No files found
+      <div id="empty-title" class="empty-title"></div>
+      <div id="empty-subtitle" class="empty-subtitle"></div>
     </div>
   </main>
 

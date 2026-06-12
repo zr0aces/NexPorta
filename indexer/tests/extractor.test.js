@@ -48,3 +48,21 @@ test('strips nested HTML tags from h1', () => {
     '<html><body><h1><a href="page.html">Linked Title</a></h1></body></html>');
   assert.equal(extractTitle(file), 'Linked Title');
 });
+
+test('ignores commented-out title and h1 tags', () => {
+  const file = writeTempFile('test.html',
+    '<!-- <title>Commented Title</title> -->\n<!-- <h1>Commented H1</h1> -->\n<html><head><title>Actual Title</title></head></html>');
+  assert.equal(extractTitle(file), 'Actual Title');
+});
+
+test('decodes HTML entities in titles', () => {
+  const file = writeTempFile('test.html',
+    '<html><head><title>A &amp; B &lt; C &gt; D &quot; E &#39; F &#x47; &#72;</title></head></html>');
+  assert.equal(extractTitle(file), 'A & B < C > D " E \' F G H');
+});
+
+test('collapses multiple whitespaces and newlines in extracted title', () => {
+  const file = writeTempFile('test.html',
+    '<html><head><title>  First\nSecond\tThird  </title></head></html>');
+  assert.equal(extractTitle(file), 'First Second Third');
+});

@@ -122,7 +122,7 @@ html {
 .search-input {
   width: 100%;
   height: 36px;
-  padding: 0 12px 0 32px;
+  padding: 0 32px 0 32px;
   border: 1px solid var(--border);
   border-radius: 8px;
   font-family: 'Kanit', sans-serif;
@@ -140,6 +140,30 @@ html {
 .search-input:focus {
   border-color: var(--orange);
   box-shadow: 0 0 0 3px var(--orange-glow);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.search-clear-btn:hover {
+  color: var(--text-2);
+  background-color: var(--border);
+}
+
+.search-clear-btn:focus-visible {
+  outline: 2px solid var(--orange);
 }
 
 /* Actions */
@@ -268,6 +292,21 @@ html {
   padding: 80px 20px;
   color: var(--text-3);
   font-size: 0.875rem;
+}
+
+.empty-title {
+  font-family: 'Prompt', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text);
+  margin-top: 8px;
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  text-align: center;
+  max-width: 380px;
 }
 
 /* ─── Groups ─────────────────────────────── */
@@ -461,4 +500,21 @@ html {
   .card { padding: 14px 16px; gap: 12px; }
   .card-filename { max-width: 120px; }
   .groups { gap: 32px; }
+}
+
+/* ─── Keyboard Accessibility & Focus Outlines ────────────────── */
+.card:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 4px;
+}
+
+.sort-wrap:focus-within {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px var(--orange-glow);
+}
+
+.theme-btn:focus-visible,
+.status-retry:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
 }
