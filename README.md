@@ -1,6 +1,6 @@
 # NexPorta
 
-A self-hosted portal for browsing and accessing static HTML content. Drop files into a directory — NexPorta indexes them automatically and serves a searchable dashboard.
+A fast, zero-dependency, self-hosted indexer and dashboard for static HTML pages.
 
 ```
 Browser → Nginx → Dashboard UI + index.json + /content/* files
