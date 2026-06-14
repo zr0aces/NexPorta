@@ -1,0 +1,54 @@
+# NexPorta – production configuration template
+# 1. Copy this file:  cp docs/deployment/docker-compose.yml.example docker-compose.yml
+# 2. Copy env file:   cp docs/deployment/.env.example .env  (edit PORT if needed)
+# 3. Replace /path/to/your/content with the absolute path to your HTML files.
+# 4. Run:             docker compose up -d
+
+services:
+  indexer:
+    image: ghcr.io/zr0aces/nexporta-indexer:latest
+    # To build locally instead of pulling from GHCR, replace the line above with:
+    # build: ./indexer
+    container_name: nexporta-indexer
+    env_file: .env
+    environment:
+      CONTENT_DIR: /content
+      OUTPUT_FILE: /data/index.json
+      DEBOUNCE_MS: "1000"
+    volumes:
+      - /path/to/your/content:/content:ro
+      - index_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "test", "-f", "/data/index.json"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  web:
+    image: ghcr.io/zr0aces/nexporta-web:latest
+    # To build locally instead of pulling from GHCR, replace the line above with:
+    # build:
+    #   context: .
+    #   dockerfile: dashboard/Dockerfile
+    container_name: nexporta-web
+    env_file: .env
+    ports:
+      - "${PORT:-8199}:80"
+    volumes:
+      - index_data:/data:ro
+      - /path/to/your/content:/content:rslave,ro
+    depends_on:
+      indexer:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  index_data:

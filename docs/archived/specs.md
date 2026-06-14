@@ -1,3 +1,5 @@
+<!-- Archived 2026-06-14: content merged into docs/architecture.md and README.md -->
+
 # NexPorta
 
 **A lightweight content portal for reports, dashboards, documentation, and static content.**
@@ -98,14 +100,11 @@ Browser
 
 ## Backend Services
 
-### Web Server
-
-* Nginx Alpine
-
-### Indexer
-
-* Node.js 22 LTS (ES Modules)
-* chokidar (v5.0.0+)
+* Web Server
+  * Nginx Alpine
+* Indexer
+  * Node.js 22 LTS (ES Modules)
+  * chokidar (v5.0.0+)
 
 ## Frontend
 
@@ -228,4 +227,3 @@ Scalability:
 # Project Goal
 
 NexPorta should be the simplest way to publish and browse large collections of static content through a modern web interface while keeping infrastructure requirements close to zero.
-

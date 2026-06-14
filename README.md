@@ -99,46 +99,19 @@ volumes:
 NexPorta uses **CalVer** in the format `YYYY.M.N` (example: `2026.6.1`).
 
 - `VERSION` is the single source of truth.
-- `node scripts/sync-version.mjs` syncs that version to related files (`indexer/package*.json`, `dashboard/version.js`).
-- `node scripts/release.mjs` bumps to the next monthly release version and runs sync automatically.
+- Script helpers synchronize and automate releases (see [docs/development.md](docs/development.md)).
 
 ---
 
 ## Development
 
-```bash
-# Run all tests
-cd indexer && node --test tests/*.test.js
-
-# Run single test file
-cd indexer && node --test tests/extractor.test.js
-
-# Run indexer locally (no Docker)
-cd indexer
-CONTENT_DIR=../content OUTPUT_FILE=/tmp/index.json node index.js
-
-# Rebuild after Dockerfile changes
-docker compose build && docker compose up -d
-
-# View logs
-docker compose logs indexer
-docker compose logs web
-
-# Full reset (volume permissions changed, etc.)
-docker compose down -v && docker compose up -d
-
-# Sync version from VERSION file
-node scripts/sync-version.mjs
-
-# Bump CalVer release version and sync
-node scripts/release.mjs
-```
+See [docs/development.md](docs/development.md) for development setup, test execution, and helper commands.
 
 ---
 
 ## Project Structure
 
-```
+```text
 nexporta/
 ├── content/              # Your HTML files go here
 ├── dashboard/            # Frontend (index.html, style.css, app.js)
@@ -168,13 +141,17 @@ nexporta/
 
 | Document | Description |
 |----------|-------------|
-| [docs/specs.md](docs/specs.md) | Full product specification, architecture, roadmap |
-| [docs/DESIGN.md](docs/DESIGN.md) | Design system — colors, typography, components |
-| [CLAUDE.md](CLAUDE.md) | Developer guide for Claude Code (commands, architecture notes) |
-| [.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml) | CI/CD — multi-arch GHCR publish on Release |
+| [docs/architecture.md](docs/architecture.md) | High-level components, shared volume architecture, data flow, constraints |
+| [docs/development.md](docs/development.md) | Local development setup, unit tests, and versioning commands |
+| [docs/deployment.md](docs/deployment.md) | Production setup, upgrades, backup, and restore guidelines |
+| [docs/configuration.md](docs/configuration.md) | Configuration environment variables reference |
+| [docs/decisions.md](docs/decisions.md) | Lightweight Architecture Decision Records (ADRs) |
+| [docs/DESIGN.md](docs/DESIGN.md) | Extraction of the dashboard visual styles and components |
+| [CLAUDE.md](CLAUDE.md) | Developer guide for Claude Code |
 
 ---
 
 ## License
 
 [MIT](LICENSE)
+
