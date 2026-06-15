@@ -3,6 +3,10 @@ import path from 'node:path';
 import { scanDirectory } from './scanner.js';
 import { extractTitle } from './extractor.js';
 
+// Hoisted RegExp definitions for performance optimization (js-hoist-regexp)
+const PATH_SPLIT_REGEX = /[\\/]/;
+const BACKSLASH_REGEX = /\\/g;
+
 export function buildIndex(contentDir) {
   const files = scanDirectory(contentDir);
   const resolvedContentDir = path.resolve(contentDir);
@@ -21,9 +25,9 @@ export function buildIndex(contentDir) {
     }
     const folder = path.dirname(rel);
     return [{
-      path: '/content/' + rel.split(/[\\/]/).map(encodeURIComponent).join('/'),
+      path: '/content/' + rel.split(PATH_SPLIT_REGEX).map(encodeURIComponent).join('/'),
       title: extractTitle(filepath),
-      folder: folder === '.' ? '' : folder.replace(/\\/g, '/'),
+      folder: folder === '.' ? '' : folder.replace(BACKSLASH_REGEX, '/'),
       filename: path.basename(filepath),
       modified: stat.mtime.toISOString(),
     }];
@@ -35,3 +39,4 @@ export function buildIndex(contentDir) {
     items,
   };
 }
+

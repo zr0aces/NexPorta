@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const EXCLUDE_DIRS = new Set(['.git', 'node_modules', 'dist', 'build', '.claude']);
+const HTML_EXT_REGEX = /\.(html|htm)$/i;
 
 export function scanDirectory(rootDir) {
   const results = [];
@@ -18,7 +19,7 @@ export function scanDirectory(rootDir) {
       if (entry.isDirectory()) {
         if (EXCLUDE_DIRS.has(entry.name) || entry.name.startsWith('.')) continue;
         walk(path.join(dir, entry.name));
-      } else if (/\.(html|htm)$/i.test(entry.name)) {
+      } else if (HTML_EXT_REGEX.test(entry.name)) {
         results.push(path.join(dir, entry.name));
       }
     }
@@ -27,3 +28,4 @@ export function scanDirectory(rootDir) {
   walk(rootDir);
   return results;
 }
+

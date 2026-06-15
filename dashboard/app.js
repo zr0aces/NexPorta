@@ -1,12 +1,75 @@
+// Hoisted RegExp definitions for performance optimization (js-hoist-regexp)
+const SPACES_REGEX = /\s+/;
+
+// LocalStorage caching (js-cache-storage)
+const storageCache = new Map();
+
+function getLocalStorage(key) {
+  if (!storageCache.has(key)) {
+    storageCache.set(key, localStorage.getItem(key));
+  }
+  return storageCache.get(key);
+}
+
+function setLocalStorage(key, value) {
+  localStorage.setItem(key, value);
+  storageCache.set(key, value);
+}
+
+// Invalidate localStorage cache on external changes
+window.addEventListener('storage', (e) => {
+  if (e.key) storageCache.delete(e.key);
+});
+
+// Cache for formatted dates (js-cache-repeated-function-calls)
+const dateCache = new Map();
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  let cached = dateCache.get(iso);
+  if (cached !== undefined) return cached;
+
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) {
+    dateCache.set(iso, '—');
+    return '—';
+  }
+  const formatted = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  dateCache.set(iso, formatted);
+  return formatted;
+}
+
+// Icons (Static SVGs)
+const ICON_FILE = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+  <path d="M3 1h5.5L11 4v9H3V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M8.5 1v3.5H11" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+</svg>`;
+
+const ICON_FOLDER = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+  <path d="M1 4h12v8H1V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M1 4V3h4l1 1H1" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+</svg>`;
+
+const ICON_ARROW = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+  <path d="M2 9L9 2M5 2h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+// Pre-parsed DOM templates for SVGs to avoid recreation in render loops (js-cache-repeated-function-calls)
+const parser = new DOMParser();
+const SVG_TEMPLATE_FILE = parser.parseFromString(ICON_FILE, 'image/svg+xml').documentElement;
+const SVG_TEMPLATE_FOLDER = parser.parseFromString(ICON_FOLDER, 'image/svg+xml').documentElement;
+const SVG_TEMPLATE_ARROW = parser.parseFromString(ICON_ARROW, 'image/svg+xml').documentElement;
+
 // Pure functions — no DOM side-effects
 
 function filterItems(items, query) {
   if (!query) return items;
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const terms = query.toLowerCase().split(SPACES_REGEX).filter(Boolean);
   return items.filter(item => {
-    const title = item.title.toLowerCase();
-    const filename = item.filename.toLowerCase();
-    const folder = item.folder.toLowerCase();
+    // Utilize pre-lowercased properties to avoid string operations in loops (js-cache-property-access)
+    const title = item.titleLower;
+    const filename = item.filenameLower;
+    const folder = item.folderLower;
     return terms.every(term =>
       title.includes(term) ||
       filename.includes(term) ||
@@ -36,28 +99,6 @@ function groupByFolder(items) {
   return groups;
 }
 
-function formatDate(iso) {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-// Icons
-
-const ICON_FILE = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-  <path d="M3 1h5.5L11 4v9H3V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-  <path d="M8.5 1v3.5H11" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-</svg>`;
-
-const ICON_FOLDER = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-  <path d="M1 4h12v8H1V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-  <path d="M1 4V3h4l1 1H1" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-</svg>`;
-
-const ICON_ARROW = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-  <path d="M2 9L9 2M5 2h4v4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`;
-
 // DOM rendering
 
 function renderCard(item) {
@@ -70,7 +111,8 @@ function renderCard(item) {
 
   const fileIcon = document.createElement('div');
   fileIcon.className = 'card-file-icon';
-  const fileIconSvg = new DOMParser().parseFromString(ICON_FILE, 'image/svg+xml').documentElement;
+  // Clone pre-parsed SVG template instead of parsing string every time (js-cache-repeated-function-calls)
+  const fileIconSvg = SVG_TEMPLATE_FILE.cloneNode(true);
   fileIcon.appendChild(fileIconSvg);
 
   const body = document.createElement('div');
@@ -99,7 +141,8 @@ function renderCard(item) {
 
   const linkIcon = document.createElement('div');
   linkIcon.className = 'card-link-icon';
-  const linkIconSvg = new DOMParser().parseFromString(ICON_ARROW, 'image/svg+xml').documentElement;
+  // Clone pre-parsed SVG template (js-cache-repeated-function-calls)
+  const linkIconSvg = SVG_TEMPLATE_ARROW.cloneNode(true);
   linkIcon.appendChild(linkIconSvg);
 
   a.append(fileIcon, body, linkIcon);
@@ -124,7 +167,8 @@ function renderGroups(items, sortBy) {
 
     const folderIcon = document.createElement('span');
     folderIcon.className = 'folder-icon';
-    const folderIconSvg = new DOMParser().parseFromString(ICON_FOLDER, 'image/svg+xml').documentElement;
+    // Clone pre-parsed SVG template (js-cache-repeated-function-calls)
+    const folderIconSvg = SVG_TEMPLATE_FOLDER.cloneNode(true);
     folderIcon.appendChild(folderIconSvg);
 
     const folderName = document.createElement('span');
@@ -191,14 +235,14 @@ function update() {
 // Theme
 
 function initTheme() {
-  const saved = localStorage.getItem('nexporta-theme') || 'light';
+  const saved = getLocalStorage('nexporta-theme') || 'light';
   document.documentElement.dataset.theme = saved;
 }
 
 function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
-  localStorage.setItem('nexporta-theme', next);
+  setLocalStorage('nexporta-theme', next);
 }
 
 // Boot
@@ -229,7 +273,15 @@ async function loadIndex() {
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    allItems = Array.isArray(data.items) ? data.items : [];
+    
+    // Pre-calculate lowercased values on load to speed up search comparisons (js-cache-property-access)
+    allItems = (Array.isArray(data.items) ? data.items : []).map(item => ({
+      ...item,
+      titleLower: (item.title || '').toLowerCase(),
+      filenameLower: (item.filename || '').toLowerCase(),
+      folderLower: (item.folder || '').toLowerCase()
+    }));
+    
     status.hidden = true;
     update();
   } catch (err) {

@@ -319,6 +319,8 @@ html {
 
 .folder-group {
   animation: rise 0.28s ease both;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
 }
 
 @keyframes rise {
