@@ -1,1 +1,1 @@
-window.NEXPORTA_VERSION = '2026.6.4';
+window.NEXPORTA_VERSION = '2026.6.5';

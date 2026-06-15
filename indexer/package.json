@@ -1,6 +1,6 @@
 {
   "name": "nexporta-indexer",
-  "version": "2026.6.4",
+  "version": "2026.6.5",
   "description": "NexPorta content indexer",
   "main": "index.js",
   "type": "module",
