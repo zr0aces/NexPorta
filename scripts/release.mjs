@@ -55,8 +55,8 @@ function readCurrentVersion() {
 
 function nextCalVer() {
   const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth() + 1;
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
   const current = readCurrentVersion();
 
   if (current && current.year === year && current.month === month) {
