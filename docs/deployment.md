@@ -23,9 +23,12 @@ See `docs/deployment/` for example configuration files. Copy and adapt them befo
 3. Edit `docker-compose.yml` to specify the absolute path to your HTML files directory. Look for the volume mounts:
    ```yaml
    volumes:
-     - /path/to/your/content:/content:ro        # indexer
-     - /path/to/your/content:/content:rslave,ro # web
+     - /path/to/your/content:/content           # indexer (read-write for upload/folders)
+     - /path/to/your/content:/content:rslave,ro # web (read-only for security)
    ```
+   > [!IMPORTANT]
+   > **Write Permissions**: The indexer container runs as user `nodejs` (UID `1001`). If you encounter permission errors when creating folders or uploading files, ensure `/path/to/your/content` on the host is writable by user `1001`, or add `user: "${UID}:${GID}"` to the indexer service in your `docker-compose.yml` to run the container using your host user's permissions.
+
 4. Start the application:
    ```bash
    docker compose up -d

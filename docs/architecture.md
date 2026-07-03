@@ -31,16 +31,17 @@ Two containers share a named Docker volume (`index_data`):
 ```
 indexer (Node.js 22) ──writes──▶ /data/index.json ──reads──▶ web (nginx:alpine)
        │                                                             │
-  ./content (ro)                                             ./content (ro)
+  ./content (rw)                                             ./content (ro)
                                                            ./dashboard (ro)
 ```
 
 ## Components
 
-- **Indexer**: A Node.js service that watches the mounted content directory and generates a metadata index.
-  - **Pipeline**: [scanner.js](file:///home/san/workspace/NexPorta/indexer/scanner.js) recursively finds HTML files &rarr; [extractor.js](file:///home/san/workspace/NexPorta/indexer/extractor.js) extracts titles &rarr; [builder.js](file:///home/san/workspace/NexPorta/indexer/builder.js) assembles `index.json` &rarr; [index.js](file:///home/san/workspace/NexPorta/indexer/index.js) writes to disk and manages the watcher with a debounce.
-- **Web Server (Nginx)**: Serves the dashboard UI, the generated `index.json`, and allows direct access to the static HTML files without a proxy layer.
-- **Dashboard UI**: A framework-free vanilla JS interface ([dashboard/app.js](file:///home/san/workspace/NexPorta/dashboard/app.js)) that reads the `/index.json` metadata to provide fast filtering, sorting, and folder grouping client-side.
+- **Indexer & API Server**: A Node.js service that watches the mounted content directory, generates a metadata index, and hosts an HTTP API server on port 3000 to handle folder creation and file uploads.
+  - **Pipeline**: [scanner.js](file:///home/san/workspace/NexPorta/indexer/scanner.js) recursively finds HTML files &rarr; [extractor.js](file:///home/san/workspace/NexPorta/indexer/extractor.js) extracts titles &rarr; [builder.js](file:///home/san/workspace/NexPorta/indexer/builder.js) assembles `index.json` &rarr; [index.js](file:///home/san/workspace/NexPorta/indexer/index.js) writes to disk, hosts the API server, and manages the watcher.
+  - **API Server**: [server.js](file:///home/san/workspace/NexPorta/indexer/server.js) handles `POST /api/directory` and `POST /api/upload` with strict security controls (file size limits, traversal blocks, file overwrite protection, and allowed extension validation), and exposes `GET /api/config` to serve runtime settings (like the password session timeout) to the frontend client.
+- **Web Server (Nginx)**: Serves the dashboard UI, the generated `index.json`, allows direct access to the static HTML files, and acts as a reverse proxy for API requests (`POST /api/*`) routing them to the indexer's port 3000.
+- **Dashboard UI**: A framework-free vanilla JS interface ([dashboard/app.js](file:///home/san/workspace/NexPorta/dashboard/app.js)) that reads the `/index.json` metadata to provide fast filtering, sorting, and folder grouping client-side. It also provides the action panel, modals, drag-and-drop file interface, progress bar, and toast notification system.
 
 ## Data Schema (`index.json`)
 
@@ -67,6 +68,7 @@ The indexer outputs a simple JSON index containing metadata:
 - `GET /` &rarr; Serves Dashboard (`dashboard/index.html`).
 - `GET /index.json` &rarr; Aliased from shared volume `/data/index.json` with `Cache-Control: no-cache`.
 - `GET /content/*` &rarr; Direct file access aliased to `/content/` mount.
+- `POST /api/*` &rarr; Proxied to the indexer container (`http://indexer:3000`).
 - Everything else &rarr; SPA fallback to `index.html`.
 
 ## Technology Stack

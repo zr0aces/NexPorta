@@ -24,6 +24,45 @@ window.addEventListener('storage', (e) => {
 // Cache for formatted dates (js-cache-repeated-function-calls)
 const dateCache = new Map();
 
+// Session-based password cache (stored in-memory only to prevent XSS exposure in localStorage/sessionStorage)
+let sessionPassword = '';
+let sessionExpiry = 0;
+let sessionTimeoutMinutes = 30; // default config, overridden by GET /api/config
+
+async function fetchConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data.sessionTimeoutMinutes === 'number') {
+        sessionTimeoutMinutes = data.sessionTimeoutMinutes;
+      }
+    }
+  } catch (err) {
+    console.warn('[nexporta] Failed to fetch API config, using default timeout.', err);
+  }
+}
+
+function getSessionPassword() {
+  if (sessionPassword && Date.now() < sessionExpiry) {
+    return sessionPassword;
+  }
+  sessionPassword = '';
+  sessionExpiry = 0;
+  return '';
+}
+
+function savePasswordSession(password) {
+  if (!password) return;
+  sessionPassword = password;
+  sessionExpiry = Date.now() + sessionTimeoutMinutes * 60 * 1000;
+}
+
+function clearPasswordSession() {
+  sessionPassword = '';
+  sessionExpiry = 0;
+}
+
 function formatDate(iso) {
   if (!iso) return '—';
   let cached = dateCache.get(iso);
@@ -303,6 +342,119 @@ async function loadIndex() {
   }
 }
 
+// Toast Notifications
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+
+  const content = document.createElement('div');
+  content.className = 'toast-content';
+  content.textContent = message;
+
+  const close = document.createElement('button');
+  close.className = 'toast-close';
+  close.innerHTML = '&times;';
+  close.addEventListener('click', () => {
+    toast.classList.add('fade-out');
+    toast.addEventListener('transitionend', () => toast.remove());
+  });
+
+  toast.append(content, close);
+  container.appendChild(toast);
+
+  // Auto dismiss
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.classList.add('fade-out');
+      toast.addEventListener('transitionend', () => toast.remove());
+    }
+  }, 4000);
+}
+
+// Modal management
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.hidden = false;
+  modal.setAttribute('aria-hidden', 'false');
+  
+  // Focus the first interactive element or input
+  const input = modal.querySelector('input, select');
+  if (input) input.focus();
+
+  // Trap focus
+  modal.addEventListener('keydown', trapFocus);
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute('aria-hidden', 'true');
+  modal.removeEventListener('keydown', trapFocus);
+}
+
+function trapFocus(e) {
+  const modal = e.currentTarget;
+  const focusables = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex="0"]');
+  if (focusables.length === 0) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+
+  if (e.key === 'Tab') {
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  }
+}
+
+// Populate the destination folders dropdown
+function populateUploadFolders() {
+  const select = document.getElementById('select-upload-folder');
+  if (!select) return;
+
+  // Clear existing items but preserve "Root /"
+  select.replaceChildren();
+  const rootOpt = document.createElement('option');
+  rootOpt.value = '';
+  rootOpt.textContent = 'Root /';
+  select.appendChild(rootOpt);
+
+  // Find all distinct folders in allItems
+  const folders = new Set();
+  allItems.forEach(item => {
+    if (item.folder) folders.add(item.folder);
+  });
+
+  const sortedFolders = Array.from(folders).sort();
+  sortedFolders.forEach(folder => {
+    const opt = document.createElement('option');
+    opt.value = folder;
+    opt.textContent = folder;
+    select.appendChild(opt);
+  });
+}
+
+// Helper: Format bytes
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
 function boot() {
   initVersionLabel();
   initTheme();
@@ -324,17 +476,313 @@ function boot() {
   // Keyboard shortcut: Press '/' to focus search
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== searchInput) {
-      e.preventDefault();
-      searchInput.focus();
-      searchInput.select();
-    } else if (e.key === 'Escape' && document.activeElement === searchInput) {
-      searchInput.blur();
+      const isInput = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+      if (!isInput) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    } else if (e.key === 'Escape') {
+      if (document.activeElement === searchInput) {
+        searchInput.blur();
+      }
+      closeModal('modal-folder');
+      closeModal('modal-upload');
     }
   });
 
   document.getElementById('sort').addEventListener('change', update);
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-  loadIndex();
+
+  // Action Panel events
+  const btnNewFolder = document.getElementById('btn-new-folder');
+  const btnUpload = document.getElementById('btn-upload');
+  
+  if (btnNewFolder) {
+    btnNewFolder.addEventListener('click', () => {
+      // Clear errors & inputs, prefill password if session active
+      const errorEl = document.getElementById('folder-error');
+      errorEl.hidden = true;
+      errorEl.textContent = '';
+      document.getElementById('input-folder-name').value = '';
+      document.getElementById('input-folder-password').value = getSessionPassword();
+      openModal('modal-folder');
+    });
+  }
+
+  if (btnUpload) {
+    btnUpload.addEventListener('click', () => {
+      populateUploadFolders();
+      // Clear inputs & errors, prefill password if session active
+      const errorEl = document.getElementById('upload-error');
+      errorEl.hidden = true;
+      errorEl.textContent = '';
+      document.getElementById('upload-progress-wrap').hidden = true;
+      const uploadPassInput = document.getElementById('input-upload-password');
+      if (uploadPassInput) uploadPassInput.value = getSessionPassword();
+      clearSelectedFile();
+      openModal('modal-upload');
+    });
+  }
+
+  // Modal Cancel/Close buttons
+  const btnCancelFolder = document.getElementById('btn-cancel-folder');
+  const btnCloseFolderModal = document.getElementById('btn-close-folder-modal');
+  const modalFolderBackdrop = document.getElementById('modal-folder-backdrop');
+
+  const closeFolder = () => closeModal('modal-folder');
+  if (btnCancelFolder) btnCancelFolder.addEventListener('click', closeFolder);
+  if (btnCloseFolderModal) btnCloseFolderModal.addEventListener('click', closeFolder);
+  if (modalFolderBackdrop) modalFolderBackdrop.addEventListener('click', closeFolder);
+
+  const btnCancelUpload = document.getElementById('btn-cancel-upload');
+  const btnCloseUploadModal = document.getElementById('btn-close-upload-modal');
+  const modalUploadBackdrop = document.getElementById('modal-upload-backdrop');
+
+  const closeUpload = () => closeModal('modal-upload');
+  if (btnCancelUpload) btnCancelUpload.addEventListener('click', closeUpload);
+  if (btnCloseUploadModal) btnCloseUploadModal.addEventListener('click', closeUpload);
+  if (modalUploadBackdrop) modalUploadBackdrop.addEventListener('click', closeUpload);
+
+  // Create Folder form handler
+  const formFolder = document.getElementById('form-folder');
+  if (formFolder) {
+    formFolder.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('input-folder-name');
+      const passwordInput = document.getElementById('input-folder-password');
+      const errorEl = document.getElementById('folder-error');
+      const folderName = input.value.trim();
+      const folderPassword = passwordInput.value;
+
+      errorEl.hidden = true;
+      errorEl.textContent = '';
+
+      // Local validation: alphanumeric + dashes, single level
+      const regex = /^[a-zA-Z0-9_-]+$/;
+      if (!regex.test(folderName)) {
+        errorEl.textContent = 'Invalid folder name. Only alphanumeric characters, underscores, and dashes are allowed.';
+        errorEl.hidden = false;
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/directory', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-password': folderPassword
+          },
+          body: JSON.stringify({ folder: folderName })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          if (res.status === 401) {
+            clearPasswordSession();
+          }
+          throw new Error(data.error || 'Failed to create directory');
+        }
+        
+        savePasswordSession(folderPassword);
+        showToast(`Folder "${folderName}" created successfully!`, 'success');
+        closeModal('modal-folder');
+        input.value = '';
+        passwordInput.value = '';
+        loadIndex();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+      }
+    });
+  }
+
+  // Upload File Drag & Drop + File Select handlers
+  const dragDropZone = document.getElementById('drag-drop-zone');
+  const inputFile = document.getElementById('input-file');
+  const fileInfo = document.getElementById('selected-file-info');
+  const fileName = document.getElementById('selected-file-name');
+  const btnRemoveFile = document.getElementById('btn-remove-file');
+  const btnSubmitUpload = document.getElementById('btn-submit-upload');
+
+  const clearSelectedFile = () => {
+    if (inputFile) inputFile.value = '';
+    if (fileInfo) fileInfo.hidden = true;
+    if (dragDropZone) dragDropZone.style.display = 'flex';
+    if (btnSubmitUpload) btnSubmitUpload.disabled = true;
+    const passwordInput = document.getElementById('input-upload-password');
+    if (passwordInput) passwordInput.value = getSessionPassword();
+  };
+
+  const handleFileSelected = (file) => {
+    const errorEl = document.getElementById('upload-error');
+    if (errorEl) {
+      errorEl.hidden = true;
+      errorEl.textContent = '';
+    }
+
+    // Local extension check
+    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.html' && ext !== '.htm') {
+      if (errorEl) {
+        errorEl.textContent = 'Invalid file type. Only .html and .htm files are allowed.';
+        errorEl.hidden = false;
+      }
+      clearSelectedFile();
+      return;
+    }
+
+    // Local size check
+    if (file.size > 5 * 1024 * 1024) {
+      if (errorEl) {
+        errorEl.textContent = 'File too large. Max size is 5MB.';
+        errorEl.hidden = false;
+      }
+      clearSelectedFile();
+      return;
+    }
+
+    // Update input's file list programmatically
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    if (inputFile) inputFile.files = dt.files;
+
+    if (fileName) fileName.textContent = `${file.name} (${formatBytes(file.size)})`;
+    if (fileInfo) fileInfo.hidden = false;
+    if (dragDropZone) dragDropZone.style.display = 'none';
+    if (btnSubmitUpload) btnSubmitUpload.disabled = false;
+  };
+
+  if (dragDropZone) {
+    dragDropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dragDropZone.classList.add('dragover');
+    });
+
+    ['dragleave', 'dragend'].forEach(eventName => {
+      dragDropZone.addEventListener(eventName, () => {
+        dragDropZone.classList.remove('dragover');
+      });
+    });
+
+    dragDropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragDropZone.classList.remove('dragover');
+      
+      if (e.dataTransfer.files.length > 0) {
+        handleFileSelected(e.dataTransfer.files[0]);
+      }
+    });
+
+    dragDropZone.addEventListener('click', () => {
+      if (inputFile) inputFile.click();
+    });
+  }
+
+  if (inputFile) {
+    inputFile.addEventListener('change', () => {
+      if (inputFile.files.length > 0) {
+        handleFileSelected(inputFile.files[0]);
+      }
+    });
+  }
+
+  if (btnRemoveFile) {
+    btnRemoveFile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      clearSelectedFile();
+    });
+  }
+
+  // Upload File form handler
+  const formUpload = document.getElementById('form-upload');
+  if (formUpload) {
+    formUpload.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const file = inputFile ? inputFile.files[0] : null;
+      const folder = document.getElementById('select-upload-folder').value;
+      const passwordInput = document.getElementById('input-upload-password');
+      const errorEl = document.getElementById('upload-error');
+      const progressWrap = document.getElementById('upload-progress-wrap');
+      const progressBar = document.getElementById('upload-progress-fill');
+      const progressText = document.getElementById('upload-progress-text');
+      const uploadPassword = passwordInput.value;
+
+      if (errorEl) {
+        errorEl.hidden = true;
+        errorEl.textContent = '';
+      }
+      
+      if (!file) {
+        if (errorEl) {
+          errorEl.textContent = 'Please select a file to upload.';
+          errorEl.hidden = false;
+        }
+        return;
+      }
+
+      if (progressWrap) progressWrap.hidden = false;
+      if (progressBar) progressBar.style.width = '0%';
+      if (progressText) progressText.textContent = '0%';
+      if (btnSubmitUpload) btnSubmitUpload.disabled = true;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/upload', true);
+      
+      // Custom headers
+      xhr.setRequestHeader('x-filename', file.name);
+      xhr.setRequestHeader('x-folder', folder);
+      xhr.setRequestHeader('x-password', uploadPassword);
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          if (progressBar) progressBar.style.width = `${percent}%`;
+          if (progressText) progressText.textContent = `${percent}%`;
+        }
+      };
+
+      xhr.onload = () => {
+        if (progressWrap) progressWrap.hidden = true;
+        if (xhr.status === 200) {
+          savePasswordSession(uploadPassword);
+          showToast(`File "${file.name}" uploaded successfully!`, 'success');
+          closeModal('modal-upload');
+          clearSelectedFile();
+          loadIndex();
+        } else {
+          if (xhr.status === 401) {
+            clearPasswordSession();
+          }
+          let errMsg = 'Upload failed';
+          try {
+            const response = JSON.parse(xhr.responseText);
+            errMsg = response.error || errMsg;
+          } catch (err) {}
+          if (errorEl) {
+            errorEl.textContent = errMsg;
+            errorEl.hidden = false;
+          }
+          if (btnSubmitUpload) btnSubmitUpload.disabled = false;
+        }
+      };
+
+      xhr.onerror = () => {
+        if (progressWrap) progressWrap.hidden = true;
+        if (errorEl) {
+          errorEl.textContent = 'Network error during upload.';
+          errorEl.hidden = false;
+        }
+        if (btnSubmitUpload) btnSubmitUpload.disabled = false;
+      };
+
+      xhr.send(file);
+    });
+  }
+
+  fetchConfig().then(() => {
+    loadIndex();
+  });
 }
+
 
 boot();

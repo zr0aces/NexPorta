@@ -12,11 +12,15 @@ services:
     container_name: nexporta-indexer
     env_file: .env
     environment:
-      CONTENT_DIR: /content
-      OUTPUT_FILE: /data/index.json
-      DEBOUNCE_MS: "1000"
+       CONTENT_DIR: /content
+       OUTPUT_FILE: /data/index.json
+       DEBOUNCE_MS: "1000"
+       HOST: 0.0.0.0
+       PORT: 3000
+       API_PASSWORD: ${API_PASSWORD}
+       SESSION_TIMEOUT_MINUTES: ${SESSION_TIMEOUT_MINUTES:-30}
     volumes:
-      - /path/to/your/content:/content:ro
+      - /path/to/your/content:/content
       - index_data:/data
     restart: unless-stopped
     healthcheck:
