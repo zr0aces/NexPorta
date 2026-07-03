@@ -58,3 +58,16 @@ test('returns empty array for empty directory', () => {
 test('returns empty array for non-existent directory', () => {
   assert.deepEqual(scanDirectory('/non/existent/path/xyz'), []);
 });
+
+test('finds HTML and Markdown files in subdirectories', () => {
+  const dir = makeTree({
+    'doc.md': '# MD',
+    'nested/guide.markdown': '# Guide',
+    'another.html': '<html></html>',
+    'image.png': 'png'
+  });
+  const results = scanDirectory(dir);
+  assert.equal(results.length, 3);
+  const basenames = results.map(f => path.basename(f)).sort();
+  assert.deepEqual(basenames, ['another.html', 'doc.md', 'guide.markdown']);
+});

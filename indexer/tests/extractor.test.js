@@ -66,3 +66,18 @@ test('collapses multiple whitespaces and newlines in extracted title', () => {
     '<html><head><title>  First\nSecond\tThird  </title></head></html>');
   assert.equal(extractTitle(file), 'First Second Third');
 });
+
+test('extracts Markdown title from first H1 header', () => {
+  const file = writeTempFile('readme.md', '# Readme File\nSome text goes here');
+  assert.equal(extractTitle(file), 'Readme File');
+});
+
+test('extracts Markdown title from front matter', () => {
+  const file = writeTempFile('doc.markdown', '---\ntitle: "YAML Front Matter Title"\n---\n# Main H1');
+  assert.equal(extractTitle(file), 'YAML Front Matter Title');
+});
+
+test('falls back to filename stem for Markdown without title or H1', () => {
+  const file = writeTempFile('empty-doc.md', 'Some content but no headers');
+  assert.equal(extractTitle(file), 'empty doc');
+});

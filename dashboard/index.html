@@ -169,14 +169,14 @@
             <svg class="upload-zone-icon" width="28" height="28" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M7 2v7M4 5l3-3 3 3M1 10v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <p class="drag-drop-text">Drag & drop your HTML file here or <span class="drag-drop-browse">browse</span></p>
-            <input type="file" id="input-file" accept=".html,.htm" required style="display: none;">
+            <p class="drag-drop-text">Drag & drop your HTML or Markdown file here or <span class="drag-drop-browse">browse</span></p>
+            <input type="file" id="input-file" accept=".html,.htm,.md,.markdown" required style="display: none;">
           </div>
           <div class="selected-file-info" id="selected-file-info" hidden>
             <span class="selected-file-name" id="selected-file-name"></span>
             <button type="button" class="btn-remove-file" id="btn-remove-file" aria-label="Remove selected file">&times;</button>
           </div>
-          <span class="form-hint">Only .html and .htm files under 5MB are allowed.</span>
+          <span class="form-hint">Only HTML (.html, .htm) and Markdown (.md, .markdown) files under 5MB are allowed.</span>
         </div>
         <div class="form-group">
           <label for="input-upload-password" class="form-label">Confirmation Password</label>

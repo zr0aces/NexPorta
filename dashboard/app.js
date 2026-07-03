@@ -84,6 +84,13 @@ const ICON_FILE = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18
   <path d="M8.5 1v3.5H11" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
 </svg>`;
 
+const ICON_MARKDOWN = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+  <path d="M3 1h5.5L11 4v9H3V1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M8.5 1v3.5H11" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M4.5 6.5v2.5m0-2.5l1.25 1.25 1.25-1.25v2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8.5 6.5h1.2c.4 0 .7.3.7.7v0c0 .4-.3.7-.7.7h-1.2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
 const ICON_FOLDER = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
   <path d="M1 4h12v8H1V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
   <path d="M1 4V3h4l1 1H1" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
@@ -96,6 +103,7 @@ const ICON_ARROW = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="1
 // Pre-parsed DOM templates for SVGs to avoid recreation in render loops (js-cache-repeated-function-calls)
 const parser = new DOMParser();
 const SVG_TEMPLATE_FILE = parser.parseFromString(ICON_FILE, 'image/svg+xml').documentElement;
+const SVG_TEMPLATE_MARKDOWN = parser.parseFromString(ICON_MARKDOWN, 'image/svg+xml').documentElement;
 const SVG_TEMPLATE_FOLDER = parser.parseFromString(ICON_FOLDER, 'image/svg+xml').documentElement;
 const SVG_TEMPLATE_ARROW = parser.parseFromString(ICON_ARROW, 'image/svg+xml').documentElement;
 
@@ -151,7 +159,8 @@ function renderCard(item) {
   const fileIcon = document.createElement('div');
   fileIcon.className = 'card-file-icon';
   // Clone pre-parsed SVG template instead of parsing string every time (js-cache-repeated-function-calls)
-  const fileIconSvg = SVG_TEMPLATE_FILE.cloneNode(true);
+  const isMd = item.filename.endsWith('.md') || item.filename.endsWith('.markdown');
+  const fileIconSvg = isMd ? SVG_TEMPLATE_MARKDOWN.cloneNode(true) : SVG_TEMPLATE_FILE.cloneNode(true);
   fileIcon.appendChild(fileIconSvg);
 
   const body = document.createElement('div');
@@ -622,9 +631,9 @@ function boot() {
 
     // Local extension check
     const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
-    if (ext !== '.html' && ext !== '.htm') {
+    if (ext !== '.html' && ext !== '.htm' && ext !== '.md' && ext !== '.markdown') {
       if (errorEl) {
-        errorEl.textContent = 'Invalid file type. Only .html and .htm files are allowed.';
+        errorEl.textContent = 'Invalid file type. Only HTML (.html, .htm) and Markdown (.md, .markdown) files are allowed.';
         errorEl.hidden = false;
       }
       clearSelectedFile();

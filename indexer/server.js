@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 // Allowed file extensions (case-insensitive)
-const ALLOWED_EXT_REGEX = /\.(html|htm)$/i;
+const ALLOWED_EXT_REGEX = /\.(html|htm|md|markdown)$/i;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Password protection setup
@@ -85,7 +85,7 @@ export function createApiServer(contentDir) {
 
     // Check allowed extension
     if (!ALLOWED_EXT_REGEX.test(sanitizedFilename)) {
-      throw new Error('Forbidden file type: Only .html and .htm files are allowed.');
+      throw new Error('Forbidden file type: Only HTML (.html, .htm) and Markdown (.md, .markdown) files are allowed.');
     }
 
     const resolvedPath = path.resolve(path.join(folderPath, sanitizedFilename));

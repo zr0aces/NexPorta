@@ -200,6 +200,35 @@ test('POST /api/upload uploads a file with correct password', async () => {
   assert.equal(fs.readFileSync(filePath, 'utf-8'), fileContent);
 });
 
+test('POST /api/upload uploads a markdown file with correct password', async () => {
+  // Create target directory first
+  const folderName = 'reports';
+  fs.mkdirSync(path.join(tempContentDir, folderName), { recursive: true });
+
+  const filename = 'guide.md';
+  const fileContent = '# Guide Title\nThis is markdown text.';
+
+  const res = await fetch(`${serverUrl}/api/upload`, {
+    method: 'POST',
+    headers: {
+      'x-filename': filename,
+      'x-folder': folderName,
+      'x-password': 'test-pass',
+      'Content-Type': 'text/markdown'
+    },
+    body: fileContent
+  });
+
+  assert.equal(res.status, 200);
+  const data = await res.json();
+  assert.equal(data.success, true);
+  assert.equal(data.path, `/content/${folderName}/${filename}`);
+
+  const filePath = path.join(tempContentDir, folderName, filename);
+  assert.ok(fs.existsSync(filePath));
+  assert.equal(fs.readFileSync(filePath, 'utf-8'), fileContent);
+});
+
 test('POST /api/upload rejects existing files (overwrite prevention) with correct password', async () => {
   const filename = 'existing.html';
   const filePath = path.join(tempContentDir, filename);
@@ -224,7 +253,7 @@ test('POST /api/upload rejects existing files (overwrite prevention) with correc
   assert.equal(fs.readFileSync(filePath, 'utf-8'), 'original content');
 });
 
-test('POST /api/upload rejects non-html extensions with correct password', async () => {
+test('POST /api/upload rejects non-allowed extensions with correct password', async () => {
   const res = await fetch(`${serverUrl}/api/upload`, {
     method: 'POST',
     headers: {
@@ -238,7 +267,7 @@ test('POST /api/upload rejects non-html extensions with correct password', async
   assert.equal(res.status, 400);
   const data = await res.json();
   assert.equal(data.success, false);
-  assert.match(data.error, /Only .html and .htm files are allowed/);
+  assert.match(data.error, /Only HTML \(.html, .htm\) and Markdown \(.md, .markdown\) files are allowed/);
 });
 
 test('POST /api/upload rejects traversal filenames with correct password', async () => {
