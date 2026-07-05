@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { Readable } from 'node:stream';
 
 let tempContentDir;
 let server;
@@ -320,4 +321,65 @@ test('POST /api/upload rejects uploads to non-existent directories with correct 
   const data = await res.json();
   assert.equal(data.success, false);
   assert.match(data.error, /Target directory does not exist/);
+});
+
+test('POST /api/upload rejects upload exceeding MAX_FILE_SIZE via content-length header', async () => {
+  const filename = 'toolarge-header.html';
+  const largeContent = Buffer.alloc(5 * 1024 * 1024 + 1024, 'a');
+
+  const res = await fetch(`${serverUrl}/api/upload`, {
+    method: 'POST',
+    headers: {
+      'x-filename': filename,
+      'x-password': 'test-pass',
+      'Content-Type': 'text/html'
+    },
+    body: largeContent
+  });
+
+  assert.equal(res.status, 413);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.match(data.error, /File too large/);
+
+  const filePath = path.join(tempContentDir, filename);
+  assert.ok(!fs.existsSync(filePath));
+});
+
+test('POST /api/upload rejects upload exceeding MAX_FILE_SIZE via stream data chunking', async () => {
+  const filename = 'toolarge-stream.html';
+  
+  // Create a readable stream that yields chunks of data
+  // We'll yield six 1MB chunks to exceed the 5MB limit
+  const chunkCount = 6;
+  let sentChunks = 0;
+  const stream = new Readable({
+    read() {
+      if (sentChunks < chunkCount) {
+        this.push(Buffer.alloc(1024 * 1024, 'a'));
+        sentChunks++;
+      } else {
+        this.push(null);
+      }
+    }
+  });
+
+  const res = await fetch(`${serverUrl}/api/upload`, {
+    method: 'POST',
+    headers: {
+      'x-filename': filename,
+      'x-password': 'test-pass',
+      'Content-Type': 'text/html'
+    },
+    body: stream,
+    duplex: 'half'
+  });
+
+  assert.equal(res.status, 413);
+  const data = await res.json();
+  assert.equal(data.success, false);
+  assert.match(data.error, /File too large/);
+
+  const filePath = path.join(tempContentDir, filename);
+  assert.ok(!fs.existsSync(filePath));
 });

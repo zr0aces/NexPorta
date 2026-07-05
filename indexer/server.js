@@ -198,41 +198,46 @@ export function createApiServer(contentDir) {
         let bytesReceived = 0;
         let limitExceeded = false;
 
-        req.on('data', chunk => {
-          bytesReceived += chunk.length;
-          if (bytesReceived > MAX_FILE_SIZE) {
-            limitExceeded = true;
-            req.destroy(); // stop receiving data
-            writeStream.destroy();
-            // Delete incomplete file
-            fs.unlink(targetFilePath, () => {});
-          }
-        });
-
-        req.pipe(writeStream);
-
         return new Promise((resolve) => {
+          const handleLimitExceeded = () => {
+            res.writeHead(413, {
+              'Connection': 'close',
+              'Content-Type': 'application/json'
+            });
+            res.end(JSON.stringify({ success: false, error: 'File too large. Max size is 5MB.' }), () => {
+              req.destroy();
+            });
+            resolve();
+          };
+
+          req.on('data', chunk => {
+            bytesReceived += chunk.length;
+            if (bytesReceived > MAX_FILE_SIZE && !limitExceeded) {
+              limitExceeded = true;
+              req.unpipe(writeStream);
+              writeStream.destroy();
+              fs.unlink(targetFilePath, () => {});
+              handleLimitExceeded();
+            }
+          });
+
+          req.pipe(writeStream);
+
           writeStream.on('finish', () => {
-            if (limitExceeded) {
-              sendJson(res, 413, { success: false, error: 'File too large. Max size is 5MB.' });
-            } else {
+            if (!limitExceeded) {
               const rel = path.relative(resolvedContentDir, targetFilePath);
               const pathUrl = '/content/' + rel.split(/[\\/]/).map(encodeURIComponent).join('/');
               sendJson(res, 200, { success: true, path: pathUrl });
+              resolve();
             }
-            resolve();
           });
 
           writeStream.on('error', err => {
-            console.error(`[nexporta-api] write stream error: ${err.message}`);
-            // Delete incomplete file
-            fs.unlink(targetFilePath, () => {});
-            sendJson(res, 500, { success: false, error: 'Failed to write file' });
-            resolve();
-          });
-
-          req.on('close', () => {
-            if (limitExceeded) {
+            if (!limitExceeded) {
+              console.error(`[nexporta-api] write stream error: ${err.message}`);
+              // Delete incomplete file
+              fs.unlink(targetFilePath, () => {});
+              sendJson(res, 500, { success: false, error: 'Failed to write file' });
               resolve();
             }
           });
