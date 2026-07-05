@@ -10,6 +10,7 @@ services:
       PORT: 3000
       API_PASSWORD: ${API_PASSWORD}
       SESSION_TIMEOUT_MINUTES: ${SESSION_TIMEOUT_MINUTES:-30}
+      ALLOWED_CORS_ORIGIN: ${ALLOWED_CORS_ORIGIN:-*}
     volumes:
       - ./homepage:/content
       - index_data:/data

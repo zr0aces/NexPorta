@@ -383,3 +383,18 @@ test('POST /api/upload rejects upload exceeding MAX_FILE_SIZE via stream data ch
   const filePath = path.join(tempContentDir, filename);
   assert.ok(!fs.existsSync(filePath));
 });
+
+test('GET /api/config returns CORS headers', async () => {
+  const res = await fetch(`${serverUrl}/api/config`);
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), '*');
+});
+
+test('OPTIONS /api/upload returns 204 with CORS headers', async () => {
+  const res = await fetch(`${serverUrl}/api/upload`, {
+    method: 'OPTIONS'
+  });
+  assert.equal(res.status, 204);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), '*');
+  assert.equal(res.headers.get('Access-Control-Allow-Methods'), 'GET, POST, OPTIONS, PUT, DELETE');
+});
