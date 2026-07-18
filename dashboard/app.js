@@ -1,82 +1,6 @@
-// Hoisted RegExp definitions for performance optimization (js-hoist-regexp)
-const SPACES_REGEX = /\s+/;
+import { DashboardStore } from './store.js';
 
-// LocalStorage caching (js-cache-storage)
-const storageCache = new Map();
-
-function getLocalStorage(key) {
-  if (!storageCache.has(key)) {
-    storageCache.set(key, localStorage.getItem(key));
-  }
-  return storageCache.get(key);
-}
-
-function setLocalStorage(key, value) {
-  localStorage.setItem(key, value);
-  storageCache.set(key, value);
-}
-
-// Invalidate localStorage cache on external changes
-window.addEventListener('storage', (e) => {
-  if (e.key) storageCache.delete(e.key);
-});
-
-// Cache for formatted dates (js-cache-repeated-function-calls)
-const dateCache = new Map();
-
-// Session-based password cache (stored in-memory only to prevent XSS exposure in localStorage/sessionStorage)
-let sessionPassword = '';
-let sessionExpiry = 0;
-let sessionTimeoutMinutes = 30; // default config, overridden by GET /api/config
-
-async function fetchConfig() {
-  try {
-    const res = await fetch('/api/config');
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data.sessionTimeoutMinutes === 'number') {
-        sessionTimeoutMinutes = data.sessionTimeoutMinutes;
-      }
-    }
-  } catch (err) {
-    console.warn('[nexporta] Failed to fetch API config, using default timeout.', err);
-  }
-}
-
-function getSessionPassword() {
-  if (sessionPassword && Date.now() < sessionExpiry) {
-    return sessionPassword;
-  }
-  sessionPassword = '';
-  sessionExpiry = 0;
-  return '';
-}
-
-function savePasswordSession(password) {
-  if (!password) return;
-  sessionPassword = password;
-  sessionExpiry = Date.now() + sessionTimeoutMinutes * 60 * 1000;
-}
-
-function clearPasswordSession() {
-  sessionPassword = '';
-  sessionExpiry = 0;
-}
-
-function formatDate(iso) {
-  if (!iso) return '—';
-  let cached = dateCache.get(iso);
-  if (cached !== undefined) return cached;
-
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) {
-    dateCache.set(iso, '—');
-    return '—';
-  }
-  const formatted = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  dateCache.set(iso, formatted);
-  return formatted;
-}
+const store = new DashboardStore();
 
 // Icons (Static SVGs)
 const ICON_FILE = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -92,7 +16,7 @@ const ICON_MARKDOWN = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height
 </svg>`;
 
 const ICON_FOLDER = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-  <path d="M1 4h12v8H1V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+  <path d="M1 4h12v8H1V4z" to="currentColor" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
   <path d="M1 4V3h4l1 1H1" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
 </svg>`;
 
@@ -107,45 +31,6 @@ const SVG_TEMPLATE_MARKDOWN = parser.parseFromString(ICON_MARKDOWN, 'image/svg+x
 const SVG_TEMPLATE_FOLDER = parser.parseFromString(ICON_FOLDER, 'image/svg+xml').documentElement;
 const SVG_TEMPLATE_ARROW = parser.parseFromString(ICON_ARROW, 'image/svg+xml').documentElement;
 
-// Pure functions — no DOM side-effects
-
-function filterItems(items, query) {
-  if (!query) return items;
-  const terms = query.toLowerCase().split(SPACES_REGEX).filter(Boolean);
-  return items.filter(item => {
-    // Utilize pre-lowercased properties to avoid string operations in loops (js-cache-property-access)
-    const title = item.titleLower;
-    const filename = item.filenameLower;
-    const folder = item.folderLower;
-    return terms.every(term =>
-      title.includes(term) ||
-      filename.includes(term) ||
-      folder.includes(term)
-    );
-  });
-}
-
-function sortItems(items, sortBy) {
-  return [...items].sort((a, b) => {
-    if (sortBy === 'modified') return b.modified.localeCompare(a.modified);
-    if (sortBy === 'folder') {
-      const cmp = a.folder.localeCompare(b.folder);
-      return cmp !== 0 ? cmp : a.title.localeCompare(b.title);
-    }
-    return a.title.localeCompare(b.title);
-  });
-}
-
-function groupByFolder(items) {
-  const groups = {};
-  for (const item of items) {
-    const key = item.folder || '';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(item);
-  }
-  return groups;
-}
-
 // DOM rendering
 
 function renderCard(item) {
@@ -158,7 +43,6 @@ function renderCard(item) {
 
   const fileIcon = document.createElement('div');
   fileIcon.className = 'card-file-icon';
-  // Clone pre-parsed SVG template instead of parsing string every time (js-cache-repeated-function-calls)
   const isMd = item.filename.endsWith('.md') || item.filename.endsWith('.markdown');
   const fileIconSvg = isMd ? SVG_TEMPLATE_MARKDOWN.cloneNode(true) : SVG_TEMPLATE_FILE.cloneNode(true);
   fileIcon.appendChild(fileIconSvg);
@@ -182,14 +66,13 @@ function renderCard(item) {
   sep.textContent = ' · ';
 
   const modified = document.createElement('span');
-  modified.textContent = formatDate(item.modified);
+  modified.textContent = store.formatDate(item.modified);
 
   meta.append(filename, sep, modified);
   body.append(title, meta);
 
   const linkIcon = document.createElement('div');
   linkIcon.className = 'card-link-icon';
-  // Clone pre-parsed SVG template (js-cache-repeated-function-calls)
   const linkIconSvg = SVG_TEMPLATE_ARROW.cloneNode(true);
   linkIcon.appendChild(linkIconSvg);
 
@@ -198,8 +81,7 @@ function renderCard(item) {
 }
 
 function renderGroups(items, sortBy) {
-  const sorted = sortItems(items, sortBy);
-  const groups = groupByFolder(sorted);
+  const groups = store.groupByFolder(items);
   const container = document.getElementById('groups');
   container.replaceChildren();
 
@@ -215,7 +97,6 @@ function renderGroups(items, sortBy) {
 
     const folderIcon = document.createElement('span');
     folderIcon.className = 'folder-icon';
-    // Clone pre-parsed SVG template (js-cache-repeated-function-calls)
     const folderIconSvg = SVG_TEMPLATE_FOLDER.cloneNode(true);
     folderIcon.appendChild(folderIconSvg);
 
@@ -243,15 +124,11 @@ function renderGroups(items, sortBy) {
   });
 }
 
-// App state
-
-let allItems = [];
-
 function update() {
   const searchInput = document.getElementById('search');
   const query = searchInput.value;
   const sortBy = document.getElementById('sort').value;
-  const filtered = filterItems(allItems, query);
+  const filtered = store.filterAndSort(query, sortBy);
   const groups = document.getElementById('groups');
   const empty = document.getElementById('empty');
 
@@ -263,10 +140,10 @@ function update() {
   if (filtered.length === 0) {
     groups.hidden = true;
     empty.hidden = false;
-    
+
     const emptyTitle = document.getElementById('empty-title');
     const emptySub = document.getElementById('empty-subtitle');
-    if (allItems.length === 0) {
+    if (store.allItems.length === 0) {
       emptyTitle.textContent = 'No files indexed yet';
       emptySub.textContent = 'Add HTML files to your content directory and the indexer will automatically discover them.';
     } else {
@@ -283,14 +160,14 @@ function update() {
 // Theme
 
 function initTheme() {
-  const saved = getLocalStorage('nexporta-theme') || 'light';
+  const saved = store.getLocalStorage('nexporta-theme') || 'light';
   document.documentElement.dataset.theme = saved;
 }
 
 function toggleTheme() {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
-  setLocalStorage('nexporta-theme', next);
+  store.setLocalStorage('nexporta-theme', next);
 }
 
 // Boot
@@ -317,36 +194,25 @@ async function loadIndex() {
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const res = await fetch('/index.json', { signal: controller.signal });
+    await store.loadIndex(controller.signal);
     clearTimeout(timeout);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    
-    // Pre-calculate lowercased values on load to speed up search comparisons (js-cache-property-access)
-    allItems = (Array.isArray(data.items) ? data.items : []).map(item => ({
-      ...item,
-      titleLower: (item.title || '').toLowerCase(),
-      filenameLower: (item.filename || '').toLowerCase(),
-      folderLower: (item.folder || '').toLowerCase()
-    }));
-    
     status.hidden = true;
     update();
   } catch (err) {
     clearTimeout(timeout);
     const msg = err.name === 'AbortError' ? 'Request timed out' : err.message;
-    
+
     status.replaceChildren();
-    
+
     const errSpan = document.createElement('span');
     errSpan.className = 'status-err';
     errSpan.textContent = `Could not load index.json — ${msg}`;
-    
+
     const retryBtn = document.createElement('button');
     retryBtn.className = 'status-retry';
     retryBtn.textContent = 'Retry';
     retryBtn.addEventListener('click', loadIndex);
-    
+
     status.append(errSpan, retryBtn);
   }
 }
@@ -374,7 +240,6 @@ function showToast(message, type = 'info') {
   toast.append(content, close);
   container.appendChild(toast);
 
-  // Auto dismiss
   setTimeout(() => {
     if (toast.parentNode) {
       toast.classList.add('fade-out');
@@ -389,12 +254,10 @@ function openModal(modalId) {
   if (!modal) return;
   modal.hidden = false;
   modal.setAttribute('aria-hidden', 'false');
-  
-  // Focus the first interactive element or input
+
   const input = modal.querySelector('input, select');
   if (input) input.focus();
 
-  // Trap focus
   modal.addEventListener('keydown', trapFocus);
 }
 
@@ -433,16 +296,14 @@ function populateUploadFolders() {
   const select = document.getElementById('select-upload-folder');
   if (!select) return;
 
-  // Clear existing items but preserve "Root /"
   select.replaceChildren();
   const rootOpt = document.createElement('option');
   rootOpt.value = '';
   rootOpt.textContent = 'Root /';
   select.appendChild(rootOpt);
 
-  // Find all distinct folders in allItems
   const folders = new Set();
-  allItems.forEach(item => {
+  store.allItems.forEach(item => {
     if (item.folder) folders.add(item.folder);
   });
 
@@ -482,7 +343,6 @@ function boot() {
     });
   }
 
-  // Keyboard shortcut: Press '/' to focus search
   document.addEventListener('keydown', (e) => {
     if (e.key === '/' && document.activeElement !== searchInput) {
       const isInput = ['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
@@ -503,18 +363,16 @@ function boot() {
   document.getElementById('sort').addEventListener('change', update);
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
-  // Action Panel events
   const btnNewFolder = document.getElementById('btn-new-folder');
   const btnUpload = document.getElementById('btn-upload');
-  
+
   if (btnNewFolder) {
     btnNewFolder.addEventListener('click', () => {
-      // Clear errors & inputs, prefill password if session active
       const errorEl = document.getElementById('folder-error');
       errorEl.hidden = true;
       errorEl.textContent = '';
       document.getElementById('input-folder-name').value = '';
-      document.getElementById('input-folder-password').value = getSessionPassword();
+      document.getElementById('input-folder-password').value = store.getSessionPassword();
       openModal('modal-folder');
     });
   }
@@ -522,19 +380,17 @@ function boot() {
   if (btnUpload) {
     btnUpload.addEventListener('click', () => {
       populateUploadFolders();
-      // Clear inputs & errors, prefill password if session active
       const errorEl = document.getElementById('upload-error');
       errorEl.hidden = true;
       errorEl.textContent = '';
       document.getElementById('upload-progress-wrap').hidden = true;
       const uploadPassInput = document.getElementById('input-upload-password');
-      if (uploadPassInput) uploadPassInput.value = getSessionPassword();
+      if (uploadPassInput) uploadPassInput.value = store.getSessionPassword();
       clearSelectedFile();
       openModal('modal-upload');
     });
   }
 
-  // Modal Cancel/Close buttons
   const btnCancelFolder = document.getElementById('btn-cancel-folder');
   const btnCloseFolderModal = document.getElementById('btn-close-folder-modal');
   const modalFolderBackdrop = document.getElementById('modal-folder-backdrop');
@@ -553,7 +409,6 @@ function boot() {
   if (btnCloseUploadModal) btnCloseUploadModal.addEventListener('click', closeUpload);
   if (modalUploadBackdrop) modalUploadBackdrop.addEventListener('click', closeUpload);
 
-  // Create Folder form handler
   const formFolder = document.getElementById('form-folder');
   if (formFolder) {
     formFolder.addEventListener('submit', async (e) => {
@@ -567,7 +422,6 @@ function boot() {
       errorEl.hidden = true;
       errorEl.textContent = '';
 
-      // Local validation: alphanumeric + dashes, single level
       const regex = /^[a-zA-Z0-9_-]+$/;
       if (!regex.test(folderName)) {
         errorEl.textContent = 'Invalid folder name. Only alphanumeric characters, underscores, and dashes are allowed.';
@@ -578,7 +432,7 @@ function boot() {
       try {
         const res = await fetch('/api/directory', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'x-password': folderPassword
           },
@@ -587,12 +441,12 @@ function boot() {
         const data = await res.json();
         if (!res.ok || !data.success) {
           if (res.status === 401) {
-            clearPasswordSession();
+            store.clearPasswordSession();
           }
           throw new Error(data.error || 'Failed to create directory');
         }
-        
-        savePasswordSession(folderPassword);
+
+        store.savePasswordSession(folderPassword);
         showToast(`Folder "${folderName}" created successfully!`, 'success');
         closeModal('modal-folder');
         input.value = '';
@@ -605,7 +459,6 @@ function boot() {
     });
   }
 
-  // Upload File Drag & Drop + File Select handlers
   const dragDropZone = document.getElementById('drag-drop-zone');
   const inputFile = document.getElementById('input-file');
   const fileInfo = document.getElementById('selected-file-info');
@@ -619,7 +472,7 @@ function boot() {
     if (dragDropZone) dragDropZone.style.display = 'flex';
     if (btnSubmitUpload) btnSubmitUpload.disabled = true;
     const passwordInput = document.getElementById('input-upload-password');
-    if (passwordInput) passwordInput.value = getSessionPassword();
+    if (passwordInput) passwordInput.value = store.getSessionPassword();
   };
 
   const handleFileSelected = (file) => {
@@ -629,7 +482,6 @@ function boot() {
       errorEl.textContent = '';
     }
 
-    // Local extension check
     const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
     if (ext !== '.html' && ext !== '.htm' && ext !== '.md' && ext !== '.markdown') {
       if (errorEl) {
@@ -640,7 +492,6 @@ function boot() {
       return;
     }
 
-    // Local size check
     if (file.size > 5 * 1024 * 1024) {
       if (errorEl) {
         errorEl.textContent = 'File too large. Max size is 5MB.';
@@ -650,7 +501,6 @@ function boot() {
       return;
     }
 
-    // Update input's file list programmatically
     const dt = new DataTransfer();
     dt.items.add(file);
     if (inputFile) inputFile.files = dt.files;
@@ -676,7 +526,7 @@ function boot() {
     dragDropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dragDropZone.classList.remove('dragover');
-      
+
       if (e.dataTransfer.files.length > 0) {
         handleFileSelected(e.dataTransfer.files[0]);
       }
@@ -702,7 +552,6 @@ function boot() {
     });
   }
 
-  // Upload File form handler
   const formUpload = document.getElementById('form-upload');
   if (formUpload) {
     formUpload.addEventListener('submit', (e) => {
@@ -720,7 +569,7 @@ function boot() {
         errorEl.hidden = true;
         errorEl.textContent = '';
       }
-      
+
       if (!file) {
         if (errorEl) {
           errorEl.textContent = 'Please select a file to upload.';
@@ -736,12 +585,11 @@ function boot() {
 
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/upload', true);
-      
-      // Custom headers
+
       xhr.setRequestHeader('x-filename', file.name);
       xhr.setRequestHeader('x-folder', folder);
       xhr.setRequestHeader('x-password', uploadPassword);
-      
+
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const percent = Math.round((event.loaded / event.total) * 100);
@@ -753,14 +601,14 @@ function boot() {
       xhr.onload = () => {
         if (progressWrap) progressWrap.hidden = true;
         if (xhr.status === 200) {
-          savePasswordSession(uploadPassword);
+          store.savePasswordSession(uploadPassword);
           showToast(`File "${file.name}" uploaded successfully!`, 'success');
           closeModal('modal-upload');
           clearSelectedFile();
           loadIndex();
         } else {
           if (xhr.status === 401) {
-            clearPasswordSession();
+            store.clearPasswordSession();
           }
           let errMsg = 'Upload failed';
           try {
@@ -788,10 +636,9 @@ function boot() {
     });
   }
 
-  fetchConfig().then(() => {
+  store.fetchConfig().then(() => {
     loadIndex();
   });
 }
-
 
 boot();

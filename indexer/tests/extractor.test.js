@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { extractTitle } from '../extractor.js';
+import { extractTitle } from '../builder.js';
 
 function writeTempFile(name, content) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-test-'));

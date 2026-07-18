@@ -13,19 +13,11 @@
   <link rel="manifest" href="site.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>
-    // Immediately apply saved theme to prevent flickering (rendering-hydration-no-flicker / js-cache-storage)
-    (function() {
-      try {
-        var saved = localStorage.getItem('nexporta-theme') || 'light';
-        document.documentElement.setAttribute('data-theme', saved);
-      } catch (e) {}
-    })();
-  </script>
+  <script src="theme-init.js"></script>
   <script src="version.js" defer></script>
-  <script src="app.js" defer></script>
+  <script type="module" src="app.js"></script>
 </head>
 <body>
 

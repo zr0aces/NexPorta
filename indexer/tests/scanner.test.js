@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
-import { scanDirectory } from '../scanner.js';
+import { scanDirectory } from '../builder.js';
 
 function makeTree(structure) {
   const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexporta-scan-'));
