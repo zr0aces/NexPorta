@@ -8,7 +8,7 @@ See `docs/deployment/` for example configuration files. Copy and adapt them befo
 
 - [docs/deployment/.env.example](file:///home/san/workspace/NexPorta/docs/deployment/.env.example) &rarr; `.env`
 - [docs/deployment/docker-compose.yml.example](file:///home/san/workspace/NexPorta/docs/deployment/docker-compose.yml.example) &rarr; `docker-compose.yml`
-- [docs/deployment/nginx.conf.example](file:///home/san/workspace/NexPorta/docs/deployment/nginx.conf.example) &rarr; `/etc/nginx/conf.d/app.conf` (Internal/baked in)
+- [docs/deployment/nginx.conf.example](file:///home/san/workspace/NexPorta/docs/deployment/nginx.conf.example) &rarr; Custom Nginx / Reverse proxy reference
 
 ### Deployment Steps
 
@@ -16,11 +16,18 @@ See `docs/deployment/` for example configuration files. Copy and adapt them befo
    ```bash
    cp docs/deployment/.env.example .env
    ```
-2. Copy the docker-compose template:
+2. Configure `.env` environment variables as needed:
+   - `PORT`: Host port for the dashboard web interface (default: `8199`).
+   - `DEBOUNCE_MS`: Debounce delay before re-indexing file changes (default: `1000`).
+   - `API_PASSWORD`: Password for authenticating folder creation and file upload APIs. If left empty, an ephemeral password is generated at startup and printed in the indexer logs.
+   - `SESSION_TIMEOUT_MINUTES`: In-memory auth session duration in minutes (default: `30`).
+   - `ALLOWED_CORS_ORIGIN`: CORS origin filter for API requests (default: `*`).
+
+3. Copy the docker-compose template:
    ```bash
    cp docs/deployment/docker-compose.yml.example docker-compose.yml
    ```
-3. Edit `docker-compose.yml` to specify the absolute path to your HTML files directory. Look for the volume mounts:
+4. Edit `docker-compose.yml` to specify the absolute path to your HTML files directory. Look for the volume mounts:
    ```yaml
    volumes:
      - /path/to/your/content:/content           # indexer (read-write for upload/folders)
@@ -29,10 +36,14 @@ See `docs/deployment/` for example configuration files. Copy and adapt them befo
    > [!IMPORTANT]
    > **Write Permissions**: The indexer container runs as user `nodejs` (UID `1001`). If you encounter permission errors when creating folders or uploading files, ensure `/path/to/your/content` on the host is writable by user `1001`, or add `user: "${UID}:${GID}"` to the indexer service in your `docker-compose.yml` to run the container using your host user's permissions.
 
-4. Start the application:
+5. Start the application:
    ```bash
    docker compose up -d
    ```
+
+## Nginx & Reverse Proxy Configuration
+
+The web container bakes in Nginx routing. If configuring an external reverse proxy (e.g. Nginx, Traefik, Caddy), refer to [docs/deployment/nginx.conf.example](file:///home/san/workspace/NexPorta/docs/deployment/nginx.conf.example). Note that `/api/*` requests must be proxied to the indexer container on port `3000` with `client_max_body_size` set to at least `10M` to support file uploads.
 
 ## Production Images
 

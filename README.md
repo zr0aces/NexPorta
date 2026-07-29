@@ -66,6 +66,9 @@ All configuration is via environment variables. Set them in `.env` (copied from 
 | `CONTENT_DIR` | `/content` | Directory to scan inside the container |
 | `OUTPUT_FILE` | `/data/index.json` | Where the index is written |
 | `DEBOUNCE_MS` | `1000` | Delay (ms) before re-indexing after a file change |
+| `API_PASSWORD` | *(Auto-generated)* | Password to authorize folder creation and upload APIs |
+| `SESSION_TIMEOUT_MINUTES` | `30` | In-memory session auth duration in minutes |
+| `ALLOWED_CORS_ORIGIN` | `*` | Allowed CORS origin header for API endpoints |
 
 **Port**: set `PORT` in `.env` or override in `docker-compose.yml`:
 
@@ -78,8 +81,8 @@ ports:
 
 ```yaml
 volumes:
-  - /path/to/your/content:/content:ro        # indexer
-  - /path/to/your/content:/content:rslave,ro # web
+  - /path/to/your/content:/content           # indexer (read-write for upload/folders)
+  - /path/to/your/content:/content:rslave,ro # web (read-only for security)
 ```
 
 ---
@@ -116,13 +119,14 @@ nexporta/
 ├── content/              # Your HTML files go here
 ├── dashboard/            # Frontend (index.html, style.css, app.js)
 │   └── Dockerfile        # Production web image (nginx + baked assets)
-├── indexer/              # Node.js watcher + indexer
-│   ├── index.js          # Entry point, chokidar watcher
-│   ├── scanner.js        # Recursive file discovery
-│   ├── extractor.js      # Title extraction
-│   ├── builder.js        # Assembles index.json
+├── indexer/              # Node.js watcher, API server & indexer
+│   ├── index.js          # Entry point, HTTP server & chokidar watcher
+│   ├── builder.js        # File scanner, title extractor & index.json builder
+│   ├── server.js         # HTTP API endpoint handler (upload, folder creation)
+│   ├── storage.js        # Filesystem storage & path safety manager
+│   ├── authenticator.js  # Password authenticator
 │   ├── Dockerfile        # Production indexer image
-│   └── tests/            # node:test test suite (20 tests)
+│   └── tests/            # node:test test suite (65 tests)
 ├── nginx/nginx.conf      # Routing config (baked into web image)
 ├── .github/workflows/
 │   └── docker-publish.yml  # Builds & publishes images on Release

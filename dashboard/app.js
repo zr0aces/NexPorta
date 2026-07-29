@@ -54,22 +54,15 @@ function renderCard(item) {
   title.className = 'card-title';
   title.textContent = item.title;
 
-  const meta = document.createElement('div');
-  meta.className = 'card-meta';
-
-  const filename = document.createElement('span');
+  const filename = document.createElement('div');
   filename.className = 'card-filename';
   filename.textContent = item.filename;
 
-  const sep = document.createElement('span');
-  sep.className = 'card-sep';
-  sep.textContent = ' · ';
+  const date = document.createElement('div');
+  date.className = 'card-date';
+  date.textContent = store.formatDate(item.modified);
 
-  const modified = document.createElement('span');
-  modified.textContent = store.formatDate(item.modified);
-
-  meta.append(filename, sep, modified);
-  body.append(title, meta);
+  body.append(title, filename, date);
 
   const linkIcon = document.createElement('div');
   linkIcon.className = 'card-link-icon';

@@ -42,11 +42,11 @@ Two containers share a named Docker volume (`index_data`):
 ```
 indexer (Node.js 22) ──writes──▶ /data/index.json ──reads──▶ web (nginx:alpine)
        │                                                             │
-  ./content (ro)                                             ./content (ro)
+  ./content (rw)                                             ./content (ro)
                                                            ./dashboard (ro)
 ```
 
-**Indexer pipeline:** `scanner.js` finds html/htm files → `extractor.js` extracts titles → `builder.js` assembles `index.json` → `index.js` writes file and manages chokidar watcher with debounce.
+**Indexer pipeline:** `builder.js` scans content directory, extracts titles & assembles `index.json` → `server.js` handles HTTP API endpoints (`POST /api/*`) → `index.js` initializes API server & chokidar watcher with debounce.
 
 **index.json schema:**
 ```json
