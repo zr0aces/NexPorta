@@ -20,6 +20,12 @@ This document records the architectural decision records (ADR) for NexPorta.
 - **Decision**: Use regular expressions in [indexer/extractor.js](file:///home/san/workspace/NexPorta/indexer/extractor.js) rather than loading a heavy HTML parser library.
 - **Reason**: The HTML files being indexed are trusted local files. A regex approach runs much faster and keeps dependencies down to zero.
 
+## 2026-08-04 — Standardize AI Agent Tooling to Claude Code, Antigravity, Codex
+
+- **Context**: The repo had accumulated instruction files/config for Cline, Cursor, Windsurf, OpenCode, GitHub Copilot, Gemini CLI, and a `.brainsync/` gitignore entry with no corresponding files — leftover cruft from copy-pasting rules across tools, none of it in active use.
+- **Decision**: Support only Claude Code (`CLAUDE.md`), Codex (`AGENTS.md`), and Google Antigravity (`.agents/rules/`, `.agents/workflows/`). Removed `.clinerules/`, `.cursor/`, `.windsurf/`, `.opencode/`, `GEMINI.md`, `.github/copilot-instructions.md`, `.github/instructions.md`, and the dead BrainSync/tool entries in `.gitignore`. Committed `.agents/` (previously gitignored by mistake, so Antigravity's rules were never shared).
+- **Reason**: One instruction file per supported tool, no dead config, no unused-tool surface area to keep in sync or accidentally trigger.
+
 ## 2026-06-14 — Filesystem as Single Source of Truth (No Database)
 
 - **Context**: Storing indexed file metadata.

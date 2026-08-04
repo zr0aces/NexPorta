@@ -4,21 +4,9 @@ content/
 homepage/
 .env
 
-# Agent memory and rules
-AGENT.md
-CLAUDE.md
-.agent/
-.claude/
-.agents/
-.agent-mem/
-.cursor/
-.cursorrules
-.windsurf/
-.windsurfrules
-.cline/
-.clinerules
-.roo/
-.gemini/
-.brainsync/
+# AI agent tool state (Claude Code, Google Antigravity, Codex)
+# CLAUDE.md, AGENTS.md, and .agents/rules|workflows are committed on purpose.
+.claude/settings.local.json
+.codex/settings.local.json
 cache/
 graphify-out/

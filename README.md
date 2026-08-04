@@ -152,6 +152,8 @@ nexporta/
 | [docs/decisions.md](docs/decisions.md) | Lightweight Architecture Decision Records (ADRs) |
 | [docs/DESIGN.md](docs/DESIGN.md) | Extraction of the dashboard visual styles and components |
 | [CLAUDE.md](CLAUDE.md) | Developer guide for Claude Code |
+| [AGENTS.md](AGENTS.md) | Developer guide for Codex |
+| [.agents/rules/](.agents/rules/) | Developer guide for Google Antigravity |
 
 ---
 

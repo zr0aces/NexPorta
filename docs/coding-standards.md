@@ -6,6 +6,7 @@
 - **Function Size**: Keep functions focused and under 100 lines of code.
 - **No Heavy Dependencies**: Before adding any npm dependency, evaluate if it is strictly necessary (e.g. built-in Node.js modules).
 - **ES Modules**: All JavaScript code in this repository uses ES Modules (`import`/`export`).
+- **No Hardcoded Versions/Config**: Read the version from the `VERSION` file (sync with `node scripts/sync-version.mjs`) and read config from environment variables (`process.env.CONTENT_DIR`, etc.), never hardcoded.
 
 ## Backend (Indexer)
 
