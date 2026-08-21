@@ -10,3 +10,8 @@ homepage/
 .codex/settings.local.json
 cache/
 graphify-out/
+# agent-parity:begin
+/.claude/*
+!/.claude/settings.json
+# agent-parity:end
+.agent-parity/
