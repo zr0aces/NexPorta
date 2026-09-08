@@ -70,7 +70,7 @@ indexer (Node.js 22) ──writes──▶ /data/index.json ──reads──▶
 - Content files are trusted local HTML — regex-based title extraction is intentional (no HTML parser).
 - Docker volume permissions: the `nodejs` user (UID 1001) owns `/data` via `RUN mkdir -p /data && chown nodejs:nodejs /data` in the Dockerfile. If you recreate volumes after changing user config, run `docker compose down -v` first.
 
-## 🛠️ UNIFIED AI WORKFLOW (Graphify, RTK, Caveman, Claude-Mem)
+## 🛠️ UNIFIED AI WORKFLOW (Graphify, RTK, Caveman)
 
 This repository adopts a unified AI development workflow across **Claude Code**, **Google Antigravity CLI (`agy`)**, and **Codex**. Follow these instructions strictly:
 
@@ -101,15 +101,6 @@ This project has a Graphify knowledge graph at `graphify-out/`.
     * *Example*: "Bug in auth middleware. Fix: [code]. Verify."
 - **Auto-Clarity**: Drop caveman mode for security warnings, irreversible actions, or when the user is confused. Resume after.
 - **Level Selection**: `/caveman lite|full|ultra|wenyan` (default is full). Use "stop caveman" or "normal mode" to stop.
-
-### 4. Claude-Mem (Cross-Session Memory)
-This project uses `claude-mem` for persistent memory across sessions.
-- **Context Injection**: Review the `<claude-mem-context>` block injected at session start for active observations.
-- **Memory Queries**: When asked about previous sessions/fixes, use the `search` and `timeline` MCP tools to query memory.
-- **3-Layer Workflow**:
-  1. **Search**: Run `search(query="...", project="...")` to retrieve a compact list of IDs.
-  2. **Timeline**: Run `timeline(anchor=ID, project="...")` to inspect context around specific events.
-  3. **Fetch**: Use `get_observations(ids=[...])` to retrieve detailed observations only for target IDs.
 
 ## graphify
 
