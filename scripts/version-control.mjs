@@ -235,7 +235,43 @@ export function release(root, config, argv, { now = new Date(), run = child, log
   try {
     const options = parseReleaseArgs(argv, config.aliases);
     if (options.help) {
-      log(`Usage: release [--version YYYY.M.N] [--build] [--tag]\nDefault: prepare only. --build ${config.build?.length ? 'runs this repository’s build recipe' : 'is unsupported in this repository'}; --tag commits exact release paths and creates an annotated tag. No push.\nDeprecated: positional version, -v VALUE, leading v, patch${Object.keys(config.aliases ?? {}).length ? ', ' + Object.keys(config.aliases).join(', ') : ''}.`);
+      const extension = fs.existsSync(path.join(root, 'scripts', 'release.js')) ? 'js' : 'mjs';
+      const command = `node scripts/release.${extension}`;
+      const hasBuild = !!config.build?.length;
+      log(`Prepare a CalVer release (YYYY.M.N). Nothing is changed by --help.
+
+Usage: ${command} [--version YYYY.M.N]${hasBuild ? ' [--build]' : ''} [--tag]
+
+Common commands:
+  ${command}
+    Prepare the next version: bump VERSION, sync versioned files, then check them.
+    Does NOT build, commit, tag, or push. Prints Git commands for you to review.
+
+  ${command} --tag
+    Prepare the next version AND commit release files and create a local annotated tag.
+    Requires an empty Git index, an attached branch, and no existing release tag.
+
+  ${command} --version YYYY.M.N
+    Replace YYYY.M.N with your chosen version. It must be newer than VERSION
+    and its month must not be later than the current GMT+7 calendar month.
+
+  node scripts/sync-version.${extension} --check
+    Check the current versioned files without bumping or changing anything.
+
+Options:
+  --version VALUE  Choose an exact version (also accepts --version=VALUE).
+  --tag            Commit only changed release files, then create an annotated tag.
+  --build          ${hasBuild ? 'Run the repository build after preparation, before any commit/tag.' : 'Not supported in this repository; fails without changing files.'}
+  -h, --help       Show this help without changing anything.
+
+Important:
+  Each release invocation prepares a NEW version. To tag an already-prepared
+  version, use the printed Git commands instead of rerunning release --tag.
+  No command pushes automatically. Review changes before publishing.
+
+Legacy shortcuts (still accepted, but warn):
+  Positional version, -v VALUE, leading v, patch${Object.keys(config.aliases ?? {}).length ? ', ' + Object.keys(config.aliases).join(', ') : ''}.
+  Prefer --version VALUE for an exact version, or no selector for the next version.`);
       return 0;
     }
     for (const alias of options.warnings) warn(`Deprecated alias: ${alias}; use --version or no selector.`);

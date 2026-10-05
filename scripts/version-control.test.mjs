@@ -55,6 +55,28 @@ function output(options = {}) {
   return { logs, options: { now, log: (s) => logs.push(s), warn: (s) => logs.push(s), ...options } };
 }
 
+test('release help gives runnable commands, supported options and a no-double-bump warning without side effects', (t) => {
+  for (const extension of ['mjs', 'js']) {
+    const root = temp(t);
+    write(root, `scripts/release.${extension}`, '// fixture entry');
+    const before = bytes(root);
+    for (const build of [undefined, [{ command: 'docker', args: ['compose', 'build'] }]]) {
+      const out = output({ run: () => assert.fail('help must not execute children') });
+      assert.equal(release(root, { ...config, build }, ['--help'], out.options), 0);
+      const help = out.logs.join('\n');
+      assert.ok(help.includes(`node scripts/release.${extension} --tag`));
+      assert.ok(help.includes(`node scripts/release.${extension} --version YYYY.M.N`));
+      assert.ok(help.includes(`node scripts/sync-version.${extension} --check`));
+      assert.match(help, /Does NOT build, commit, tag, or push/);
+      assert.match(help, /Each release invocation prepares a NEW version/);
+      assert.match(help, /use the printed Git commands instead of rerunning/);
+      assert.equal(help.split('\n').find((line) => line.startsWith('Usage:')).includes('[--build]'), !!build);
+      assert.ok(help.includes(build ? 'Run the repository build' : 'Not supported in this repository'));
+      assert.deepEqual(bytes(root), before);
+    }
+  }
+});
+
 test('default prepare/check/help leave index and refs unchanged even with unrelated staged content', (t) => {
   const root = fixture(t);
   init(root);
