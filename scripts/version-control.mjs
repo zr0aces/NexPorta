@@ -284,7 +284,11 @@ Legacy shortcuts (still accepted, but warn):
     for (const skipped of prepared.skipped) log(`Optional absent target skipped: ${skipped}`);
     if (options.build) {
       state = 'prepared/build-failed';
-      for (const step of config.build) run(path.resolve(root, step.cwd ?? '.'), step.command === 'node' ? process.execPath : step.command, step.args, { stdio: 'ignore', env: { ...process.env, ...step.env, APP_VERSION: version } });
+      for (const { command, args, cwd = '.', env = {} } of config.build) {
+        const environment = typeof env === 'function' ? env(version) : env;
+        run(path.resolve(root, cwd), command === 'node' ? process.execPath : command, args,
+          { stdio: 'ignore', env: { ...process.env, ...environment, APP_VERSION: version } });
+      }
       state = 'prepared';
     }
     const paths = prepared.changed.filter((file) => !file.private).map((file) => file.path);

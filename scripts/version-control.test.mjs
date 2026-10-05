@@ -175,6 +175,27 @@ test('explicit build precedes tagging, Node children use process.execPath, no im
   assert.ok(!calls.some((c) => c[0] === 'npm'));
 });
 
+test('build environment supports static and version-derived values without implicit execution', (t) => {
+  const root = fixture(t);
+  const calls = [];
+  const building = { ...config, build: [
+    { command: 'docker', args: ['compose', 'build'], env: { STATIC_VALUE: 'keep' } },
+    { command: 'docker', args: ['compose', 'build'], env: (version) => ({ NEXSIGNL_VERSION: version }) },
+  ] };
+  const out = output({ run: (_cwd, command, _args, { env } = {}) => {
+    if (command === 'docker') calls.push(env);
+    return '';
+  } });
+  assert.equal(release(root, building, [], out.options), 0);
+  assert.equal(calls.length, 0);
+  assert.equal(release(root, building, ['--build'], out.options), 0);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].STATIC_VALUE, 'keep');
+  assert.equal(calls[0].APP_VERSION, '2026.10.3');
+  assert.equal(calls[1].NEXSIGNL_VERSION, '2026.10.3');
+  assert.equal(calls[1].APP_VERSION, '2026.10.3');
+});
+
 test('commit failure unstages owned paths; tag failure retains commit and reports SHA', (t) => {
   for (const stage of ['commit', 'tag']) {
     const root = fixture(t);
